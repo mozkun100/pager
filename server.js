@@ -13,6 +13,7 @@ const os = require('os');
 const http = require('http');
 const express = require('express');
 const { Server } = require('socket.io');
+const QRCode = require('qrcode');
 const db = require('./db');
 
 const PORT = process.env.PORT || 3000;
@@ -33,6 +34,40 @@ app.get('/', (req, res) => {
 app.get('/cashier', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'cashier.html'));
 });
+
+// "/qr" = صفحة طباعة الـ QR
+app.get('/qr', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'qr.html'));
+});
+
+// يرجّع رابط صفحة العميل + صورة الـ QR له (SVG)
+// - لو حددنا PUBLIC_URL (لما ننقل لاستضافة حقيقية) نستخدمه
+// - لو الكاشير فاتح من نفس الكمبيوتر (localhost) نستخدم عنوان الكمبيوتر في الشبكة
+//   لأن "localhost" في جوال العميل يعني جوال العميل نفسه، مو كمبيوترك!
+// - غير كذا نستخدم نفس الرابط اللي فاتح منه الكاشير
+app.set('trust proxy', true);
+app.get('/api/qr', async (req, res) => {
+  let urls;
+  if (process.env.PUBLIC_URL) {
+    urls = [process.env.PUBLIC_URL.replace(/\/?$/, '/')];
+  } else if (['localhost', '127.0.0.1', '::1'].includes(req.hostname)) {
+    urls = getLocalIPs().map((ip) => `http://${ip}:${PORT}/`);
+  } else {
+    urls = [`${req.protocol}://${req.get('host')}/`];
+  }
+
+  const links = await Promise.all(urls.map(async (url) => ({
+    url,
+    local: isPrivateAddress(new URL(url).hostname),
+    svg: await QRCode.toString(url, { type: 'svg', margin: 1, errorCorrectionLevel: 'M' }),
+  })));
+  res.json({ links });
+});
+
+// عنوان داخلي (شبكة البيت) ولا عنوان حقيقي على الإنترنت؟
+function isPrivateAddress(host) {
+  return /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|127\.|localhost$)/.test(host);
+}
 
 // ---------- 2) الغرف (Rooms) ----------
 // Socket.IO يسمح نحط الأجهزة في "غرف"، ونرسل رسالة لغرفة معينة بس:
@@ -163,6 +198,7 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log('  On this computer:');
   console.log(`    Cashier:   http://localhost:${PORT}/cashier`);
   console.log(`    Customer:  http://localhost:${PORT}/`);
+  console.log(`    Print QR:  http://localhost:${PORT}/qr`);
 
   const ips = getLocalIPs();
   if (ips.length) {

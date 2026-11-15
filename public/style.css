@@ -383,3 +383,105 @@ body.customer { min-height: 100vh; min-height: 100dvh; }
 body.alerting #receivedBtn { box-shadow: 0 0 0 3px #fff; }
 body.alerting .keep-open,
 body.alerting .link-btn { animation: flash-text 1s steps(1, end) infinite; }
+
+/* =============================================================
+   زر اللغة + أزرار الشريط العلوي
+   ============================================================= */
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip:hover { background: #eef1f5; }
+body.alerting .chip { background: #fff; }
+
+/* =============================================================
+   صفحة طباعة الـ QR
+   ============================================================= */
+.qr-page h1 { margin: 8px 0 0; }
+.select {
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font: inherit;
+  direction: ltr;
+  background: #fff;
+}
+.note {
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+.qr-sheet {
+  margin-top: 24px;
+  background: #fff;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 32px 24px;
+  text-align: center;
+}
+.sheet-brand {
+  font-size: 1.8rem;
+  font-weight: 800;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+.sheet-brand .sep { color: var(--border); }
+.qr-box {
+  width: min(100%, 320px);
+  margin: 20px auto;
+  aspect-ratio: 1;
+}
+.qr-box svg { width: 100%; height: 100%; display: block; }
+.sheet-text {
+  display: flex;
+  flex-direction: column;
+  margin: 12px 0;
+}
+.sheet-text strong { font-size: 1.35rem; }
+.sheet-text span { color: var(--muted); }
+.sheet-url {
+  margin-top: 16px;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: .85rem;
+  color: var(--muted);
+}
+
+/* وقت الطباعة: نخفي الأزرار، والورقة تاخذ الصفحة كاملة */
+@media print {
+  @page { margin: 12mm; }
+  html, body, .qr-page { background: #fff !important; }
+  .no-print { display: none !important; }
+  .container { max-width: none; padding: 0; }
+  .qr-sheet { border: 0; margin: 0; padding: 0; }
+  .qr-box { width: 120mm; }
+  .sheet-brand { font-size: 28pt; }
+  .sheet-text strong { font-size: 20pt; }
+  .sheet-text span { font-size: 14pt; color: #444; }
+}

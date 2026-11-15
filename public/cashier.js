@@ -1,5 +1,6 @@
 // =============================================================
 //  لوحة الكاشير — الكود اللي يشتغل في المتصفح
+//  (النصوص كلها تجي من i18n.js عن طريق الدالة t)
 // =============================================================
 
 const socket = io();
@@ -24,24 +25,28 @@ const orderTemplate = $('orderTemplate');
 let orders = [];
 let clockOffset = 0; // الفرق بين ساعة السيرفر وساعة هذا الجهاز
 
-// رسائل الأخطاء بالعربي
-const ERRORS = {
-  ALL_NUMBERS_BUSY: 'كل الأرقام مشغولة! سلّم بعض الطلبات أو ارفع الحد من الإعدادات.',
-  INVALID_MAX: 'اكتب رقم صحيح بين 1 و 9999.',
-  MAX_BELOW_ACTIVE: 'ما يصير الحد أقل من رقم طلب نشط حالياً',
+// رموز الأخطاء من السيرفر ← مفتاح النص المترجم
+const ERROR_KEYS = {
+  ALL_NUMBERS_BUSY: 'errAllBusy',
+  INVALID_MAX: 'errInvalidMax',
+  MAX_BELOW_ACTIVE: 'errMaxBelowActive',
 };
 
 // ---------- الاتصال ----------
+function renderStatus() {
+  statusText.textContent = socket.connected ? t('connected') : t('disconnected');
+  statusEl.classList.toggle('online', socket.connected);
+}
+renderStatus();
+
 socket.on('connect', () => {
-  statusEl.classList.add('online');
-  statusText.textContent = 'متصل';
+  renderStatus();
   newOrderBtn.disabled = false;
   socket.emit('cashier:join'); // نطلب نكون في "غرفة الكاشير"
 });
 
 socket.on('disconnect', () => {
-  statusEl.classList.remove('online');
-  statusText.textContent = 'غير متصل — جاري إعادة الاتصال…';
+  renderStatus();
   newOrderBtn.disabled = true;
 });
 
@@ -51,6 +56,14 @@ socket.on('state', (state) => {
   orders = state.orders;
   if (document.activeElement !== maxInput) maxInput.value = state.maxNumber;
   render();
+});
+
+// لما تتغيّر اللغة نعيد رسم النصوص المتغيّرة
+document.addEventListener('langchange', () => {
+  renderStatus();
+  render();
+  newOrderError.classList.add('hidden');
+  settingsMsg.classList.add('hidden');
 });
 
 // ---------- الأزرار ----------
@@ -67,7 +80,7 @@ newOrderBtn.addEventListener('click', () => {
       void lastNumber.offsetWidth;
       lastNumber.classList.add('pop');
     } else {
-      showError(newOrderError, ERRORS[res.error] || 'صار خطأ، حاول مرة ثانية.');
+      showError(newOrderError, t(ERROR_KEYS[res.error] || 'errGeneric'));
     }
   });
 });
@@ -76,11 +89,9 @@ saveMaxBtn.addEventListener('click', () => {
   socket.emit('settings:setMax', { max: maxInput.value }, (res) => {
     if (res.ok) {
       settingsMsg.className = 'success';
-      settingsMsg.textContent = `تم الحفظ ✅ الأرقام الحين من 1 إلى ${res.max}`;
+      settingsMsg.textContent = t('savedMax', { max: res.max });
     } else {
-      let msg = ERRORS[res.error] || 'صار خطأ.';
-      if (res.error === 'MAX_BELOW_ACTIVE') msg += ` (${res.maxActive}).`;
-      showError(settingsMsg, msg);
+      showError(settingsMsg, t(ERROR_KEYS[res.error] || 'errGeneric', { max: res.maxActive }));
     }
   });
 });
@@ -103,10 +114,12 @@ function render() {
     card.classList.add(isReady ? 'is-ready' : 'is-preparing');
     card.dataset.id = order.id;
     card.querySelector('.order-number').textContent = order.number;
-    card.querySelector('.badge').textContent = isReady ? 'جاهز' : 'قيد التحضير';
+    card.querySelector('.badge').textContent = t(isReady ? 'statusReady' : 'statusPreparing');
 
     const readyBtn = card.querySelector('.btn-ready');
     const closeBtn = card.querySelector('.btn-close');
+    readyBtn.textContent = t('btnReady');
+    closeBtn.textContent = t('btnReceived');
 
     if (isReady) {
       readyBtn.remove(); // ما نحتاج زر "جاهز" لطلب جاهز أصلاً
@@ -118,7 +131,7 @@ function render() {
     }
 
     closeBtn.addEventListener('click', () => {
-      if (!confirm(`تأكيد استلام الطلب رقم ${order.number}؟`)) return;
+      if (!confirm(t('confirmClose', { number: order.number }))) return;
       closeBtn.disabled = true;
       socket.emit('order:close', { id: order.id });
     });
@@ -129,7 +142,6 @@ function render() {
 }
 
 // ---------- العدادات ----------
-// "قيد التحضير منذ 05:12" أو "جاهز منذ 01:30"
 function updateTimers() {
   const now = Date.now() + clockOffset;
   for (const card of ordersGrid.children) {
@@ -140,8 +152,8 @@ function updateTimers() {
     const since = isReady ? order.readyAt : order.createdAt;
     const seconds = Math.max(0, Math.floor((now - since) / 1000));
 
-    const timer = card.querySelector('.order-timer');
-    timer.textContent = (isReady ? 'جاهز منذ ' : 'منذ ') + formatDuration(seconds);
+    card.querySelector('.order-timer').textContent =
+      t(isReady ? 'readySince' : 'since', { time: formatDuration(seconds) });
 
     // تلوين لو طال الانتظار (أكثر من 10 دقايق)
     card.classList.toggle('is-late', seconds >= 600);

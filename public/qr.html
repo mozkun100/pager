@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n-title="qrTitle">طباعة رمز QR</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="qr-page">
+  <main class="container">
+
+    <!-- ===== أدوات التحكم (ما تنطبع) ===== -->
+    <div class="no-print">
+      <header class="topbar">
+        <a href="/cashier" class="chip" data-i18n="qrBack">← رجوع للوحة الكاشير</a>
+        <button class="chip lang-btn" data-i18n="switchLang">English</button>
+      </header>
+
+      <h1 data-i18n="qrTitle">طباعة رمز QR</h1>
+      <p class="subtitle" data-i18n="qrIntro"></p>
+
+      <div id="chooser" class="card hidden">
+        <label for="linkSelect" class="field-label" data-i18n="qrChooseLink">اختر الرابط المناسب:</label>
+        <select id="linkSelect" class="select"></select>
+      </div>
+
+      <div id="localNote" class="note hidden" data-i18n="qrLocalNote"></div>
+
+      <button id="printBtn" class="btn btn-big" data-i18n="qrPrint" disabled>🖨️ طباعة</button>
+    </div>
+
+    <!-- ===== الورقة اللي تنطبع (عربي + إنجليزي دائماً) ===== -->
+    <section class="qr-sheet">
+      <div class="sheet-brand">
+        <span dir="rtl">🔔 المنبه</span>
+        <span class="sep">|</span>
+        <span dir="ltr">Pager</span>
+      </div>
+
+      <div id="qrBox" class="qr-box"></div>
+
+      <div class="sheet-text" dir="rtl" lang="ar">
+        <strong>صوّر الكود واكتب رقم طلبك</strong>
+        <span>وجوالك بينبهك أول ما يجهز طلبك</span>
+      </div>
+      <div class="sheet-text" dir="ltr" lang="en">
+        <strong>Scan &amp; enter your order number</strong>
+        <span>Your phone will alert you when it’s ready</span>
+      </div>
+
+      <div id="sheetUrl" class="sheet-url" dir="ltr"></div>
+    </section>
+  </main>
+
+  <script src="/i18n.js"></script>
+  <script>
+    const qrBox = document.getElementById('qrBox');
+    const sheetUrl = document.getElementById('sheetUrl');
+    const chooser = document.getElementById('chooser');
+    const linkSelect = document.getElementById('linkSelect');
+    const localNote = document.getElementById('localNote');
+    const printBtn = document.getElementById('printBtn');
+    let links = [];
+
+    // نجيب الرابط وصورة الـ QR من السيرفر
+    fetch('/api/qr')
+      .then((r) => r.json())
+      .then((data) => {
+        links = data.links;
+        if (!links.length) return;
+
+        // لو للكمبيوتر أكثر من عنوان (مثلاً واي فاي + كيبل) نخلي الكاشير يختار
+        if (links.length > 1) {
+          for (const [i, l] of links.entries()) {
+            linkSelect.add(new Option(l.url, i));
+          }
+          // نقدّم عناوين 192.168 لأنها غالباً عنوان الواي فاي
+          const wifi = links.findIndex((l) => l.url.includes('192.168.'));
+          if (wifi > 0) linkSelect.value = wifi;
+          chooser.classList.remove('hidden');
+        }
+        show(Number(linkSelect.value) || 0);
+        printBtn.disabled = false;
+      });
+
+    linkSelect.addEventListener('change', () => show(Number(linkSelect.value)));
+
+    function show(i) {
+      const link = links[i];
+      qrBox.innerHTML = link.svg; // صورة SVG مولّدة من السيرفر
+      sheetUrl.textContent = link.url;
+      localNote.classList.toggle('hidden', !link.local);
+    }
+
+    printBtn.addEventListener('click', () => window.print());
+  </script>
+</body>
+</html>

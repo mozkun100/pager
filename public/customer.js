@@ -90,8 +90,8 @@ numberInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') activate
 
 function activate() {
   const number = numberInput.value.trim();
-  if (!number) return showEntryError('اكتب رقم طلبك أول');
-  if (!socket.connected) return showEntryError('ما فيه اتصال بالسيرفر، تأكد من الإنترنت');
+  if (!number) return showEntryError(t('errEmpty'));
+  if (!socket.connected) return showEntryError(t('errOffline'));
 
   // لازم يكون هنا مباشرة داخل الضغطة — هذا اللي يسمح بالصوت في المتصفح
   Alarm.unlock();
@@ -99,7 +99,7 @@ function activate() {
   activateBtn.disabled = true;
   socket.emit('customer:join', { number }, (res) => {
     activateBtn.disabled = false;
-    if (!res.ok) return showEntryError('الرقم غير صحيح');
+    if (!res.ok) return showEntryError(t('errWrongNumber'));
 
     entryError.classList.add('hidden');
     store.set('order', { id: res.order.id, number: res.order.number });
@@ -130,7 +130,7 @@ function applyOrder(order, serverNow) {
   currentOrder = order;
 
   if (order.status === 'done') {
-    $('doneNumber').textContent = order.number;
+    $('thanksBody').textContent = t('thanksBody', { number: order.number });
     reactivateBtn.classList.add('hidden');
     store.del('order');
     store.del('stopped');
@@ -142,7 +142,7 @@ function applyOrder(order, serverNow) {
 
   const isReady = order.status === 'ready';
   orderNumber.textContent = order.number;
-  orderStatusText.textContent = isReady ? 'طلبك جاهز ✅' : 'طلبك مو جاهز';
+  orderStatusText.textContent = t(isReady ? 'isReady' : 'notReady');
   orderPanel.classList.toggle('is-ready', isReady);
   receivedBtn.classList.toggle('btn-received-strong', isReady);
   showView('order');
@@ -156,7 +156,7 @@ function updateTimer() {
   const isReady = currentOrder.status === 'ready';
   const since = isReady ? currentOrder.readyAt : currentOrder.createdAt;
   const seconds = Math.max(0, Math.floor((Date.now() + clockOffset - since) / 1000));
-  orderTimer.textContent = (isReady ? 'جاهز منذ ' : 'منذ ') + formatDuration(seconds);
+  orderTimer.textContent = t(isReady ? 'readySince' : 'since', { time: formatDuration(seconds) });
 }
 setInterval(updateTimer, 1000);
 
@@ -171,7 +171,6 @@ function formatDuration(total) {
 // =============================================================
 //  3) التنبيه: يرن لما يكون الطلب "جاهز"، إلا إذا العميل أوقفه
 // =============================================================
-const PAGE_TITLE = document.title;
 let titleTimer = null;
 
 function syncAlarm() {
@@ -187,14 +186,14 @@ function syncAlarm() {
     // عنوان التبويب يومض بعد (يفيد لو الصفحة في تبويب ثاني)
     let on = false;
     titleTimer = setInterval(() => {
-      document.title = (on = !on) ? '🔔 طلبك جاهز!' : PAGE_TITLE;
+      document.title = (on = !on) ? t('titleReady') : t('appName');
     }, 1000);
   } else if (!shouldRing) {
     Alarm.stop();
     document.body.classList.remove('alerting');
     stopAlarmBtn.classList.add('hidden');
     clearInterval(titleTimer);
-    document.title = PAGE_TITLE;
+    document.title = t('appName');
   }
 }
 
@@ -210,12 +209,18 @@ stopAlarmBtn.addEventListener('click', () => {
 // =============================================================
 receivedBtn.addEventListener('click', () => {
   if (!currentOrder) return;
-  if (!confirm('متأكد إنك استلمت طلبك؟')) return;
+  if (!confirm(t('confirmReceived'))) return;
   receivedBtn.disabled = true;
   socket.emit('order:close', { id: currentOrder.id }, () => {
     receivedBtn.disabled = false;
     // السيرفر بيرسل order:update بحالة "done" وتنعرض رسالة الشكر
   });
+});
+
+// لما تتغيّر اللغة نعيد كتابة النصوص المتغيّرة (الحالة، العداد، رسالة الشكر)
+document.addEventListener('langchange', () => {
+  entryError.classList.add('hidden');
+  if (currentOrder) applyOrder(currentOrder, Date.now() + clockOffset);
 });
 
 // ---------- أزرار الرجوع ----------

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>المنبه — لوحة الكاشير</title>
+  <title data-i18n-title="cashierTitle">لوحة الكاشير</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -11,35 +11,39 @@
 
     <!-- الشريط العلوي -->
     <header class="topbar">
-      <h1>لوحة الكاشير</h1>
-      <span id="status" class="status"><span class="dot"></span><span id="statusText">غير متصل</span></span>
+      <h1 data-i18n="cashierTitle">لوحة الكاشير</h1>
+      <div class="topbar-actions">
+        <span id="status" class="status"><span class="dot"></span><span id="statusText"></span></span>
+        <a href="/qr" class="chip" data-i18n="printQr">🖨️ طباعة QR</a>
+        <button class="chip lang-btn" data-i18n="switchLang">English</button>
+      </div>
     </header>
 
     <!-- زر طلب جديد + آخر رقم -->
     <section class="card new-order">
-      <button id="newOrderBtn" class="btn btn-big" disabled>+ طلب جديد</button>
+      <button id="newOrderBtn" class="btn btn-big" disabled data-i18n="newOrder">+ طلب جديد</button>
       <div id="lastNumberBox" class="last-number hidden">
-        <span class="label">الرقم الجديد</span>
+        <span class="label" data-i18n="newNumber">الرقم الجديد</span>
         <span id="lastNumber" class="number"></span>
-        <span class="hint">بلّغ العميل بهذا الرقم</span>
+        <span class="hint" data-i18n="tellCustomer">بلّغ العميل بهذا الرقم</span>
       </div>
       <div id="newOrderError" class="error hidden"></div>
     </section>
 
     <!-- قائمة الطلبات النشطة -->
     <section>
-      <h2 class="section-title">الطلبات النشطة <span id="activeCount" class="count">0</span></h2>
-      <div id="emptyState" class="empty">ما فيه طلبات نشطة حالياً</div>
+      <h2 class="section-title"><span data-i18n="activeOrders">الطلبات النشطة</span> <span id="activeCount" class="count">0</span></h2>
+      <div id="emptyState" class="empty" data-i18n="noActiveOrders">ما فيه طلبات نشطة حالياً</div>
       <div id="ordersGrid" class="orders-grid"></div>
     </section>
 
     <!-- الإعدادات -->
     <details class="card settings">
-      <summary>⚙️ الإعدادات</summary>
-      <label for="maxInput">أعلى رقم للطلبات (بعده يرجع الترقيم إلى 1)</label>
+      <summary data-i18n="settings">⚙️ الإعدادات</summary>
+      <label for="maxInput" data-i18n="maxLabel">أعلى رقم للطلبات (بعده يرجع الترقيم إلى 1)</label>
       <div class="row">
         <input id="maxInput" type="number" min="1" max="9999" inputmode="numeric">
-        <button id="saveMaxBtn" class="btn btn-small">حفظ</button>
+        <button id="saveMaxBtn" class="btn btn-small" data-i18n="save">حفظ</button>
       </div>
       <div id="settingsMsg" class="hidden"></div>
     </details>
@@ -54,13 +58,14 @@
       </div>
       <div class="order-timer"></div>
       <div class="order-actions">
-        <button class="btn btn-ready">جاهز</button>
-        <button class="btn btn-close">تم الاستلام</button>
+        <button class="btn btn-ready"></button>
+        <button class="btn btn-close"></button>
       </div>
     </article>
   </template>
 
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/i18n.js"></script>
   <script src="/cashier.js"></script>
 </body>
 </html>

@@ -4,63 +4,67 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f6f7f9">
-  <title>المنبه</title>
+  <title data-i18n-title="appName">المنبه</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body class="customer">
   <!-- شريط يظهر لو انقطع الاتصال -->
-  <div id="offlineBar" class="offline-bar hidden">انقطع الاتصال… جاري إعادة الاتصال</div>
+  <div id="offlineBar" class="offline-bar hidden" data-i18n="offline">انقطع الاتصال… جاري إعادة الاتصال</div>
 
   <main class="container">
     <header class="topbar">
-      <h1>المنبه</h1>
-      <span id="status" class="status"><span class="dot"></span></span>
+      <h1 data-i18n="appName">المنبه</h1>
+      <div class="topbar-actions">
+        <span id="status" class="status"><span class="dot"></span></span>
+        <button class="chip lang-btn" data-i18n="switchLang">English</button>
+      </div>
     </header>
 
     <!-- ========== 1) إدخال رقم الطلب ========== -->
     <section id="viewEntry" class="view">
       <div class="card">
-        <label for="numberInput" class="field-label">اكتب رقم طلبك</label>
+        <label for="numberInput" class="field-label" data-i18n="enterNumber">اكتب رقم طلبك</label>
         <input id="numberInput" class="number-input" type="number" inputmode="numeric"
-               min="1" autocomplete="off" placeholder="مثلاً 27">
+               min="1" autocomplete="off" data-i18n-placeholder="numberPlaceholder">
         <div id="entryError" class="error hidden"></div>
-        <button id="activateBtn" class="btn btn-big">🔔 فعّل التنبيه</button>
+        <button id="activateBtn" class="btn btn-big" data-i18n="activate">🔔 فعّل التنبيه</button>
       </div>
-      <p class="keep-open">📱 خلّ الصفحة مفتوحة عشان يوصلك التنبيه</p>
+      <p class="keep-open" data-i18n="keepOpen">📱 خلّ الصفحة مفتوحة عشان يوصلك التنبيه</p>
     </section>
 
     <!-- ========== 2) متابعة الطلب (مو جاهز / جاهز) ========== -->
     <section id="viewOrder" class="view hidden">
       <!-- يظهر بعد تحديث الصفحة: المتصفح يحتاج ضغطة جديدة عشان يسمح بالصوت -->
-      <button id="reactivateBtn" class="btn btn-big btn-reactivate hidden">🔔 اضغط هنا لإعادة تفعيل التنبيه</button>
+      <button id="reactivateBtn" class="btn btn-big btn-reactivate hidden" data-i18n="reactivate">🔔 اضغط هنا لإعادة تفعيل التنبيه</button>
 
       <div id="orderPanel" class="order-panel">
-        <div class="panel-label">طلب رقم</div>
+        <div class="panel-label" data-i18n="orderNo">طلب رقم</div>
         <div id="orderNumber" class="panel-number"></div>
         <div id="orderStatusText" class="panel-status"></div>
         <div id="orderTimer" class="panel-timer"></div>
       </div>
 
       <!-- يظهر بس والتنبيه شغال — يوقف الصوت والاهتزاز في هذا الجوال فقط -->
-      <button id="stopAlarmBtn" class="btn btn-big btn-stop hidden">🔕 إيقاف التنبيه</button>
+      <button id="stopAlarmBtn" class="btn btn-big btn-stop hidden" data-i18n="stopAlarm">🔕 إيقاف التنبيه</button>
 
-      <button id="receivedBtn" class="btn btn-received">تم الاستلام</button>
-      <p class="keep-open">📱 خلّ الصفحة مفتوحة عشان يوصلك التنبيه</p>
-      <button id="changeNumberBtn" class="link-btn">رقم غلط؟ غيّر الرقم</button>
+      <button id="receivedBtn" class="btn btn-received" data-i18n="btnReceived">تم الاستلام</button>
+      <p class="keep-open" data-i18n="keepOpen">📱 خلّ الصفحة مفتوحة عشان يوصلك التنبيه</p>
+      <button id="changeNumberBtn" class="link-btn" data-i18n="changeNumber">رقم غلط؟ غيّر الرقم</button>
     </section>
 
     <!-- ========== 3) شكراً ========== -->
     <section id="viewDone" class="view hidden">
       <div class="card thanks">
         <div class="thanks-icon">🙏</div>
-        <h2>شكراً لك!</h2>
-        <p>تم استلام طلبك رقم <strong id="doneNumber"></strong>. بالعافية</p>
+        <h2 data-i18n="thanks">شكراً لك!</h2>
+        <p id="thanksBody"></p>
       </div>
-      <button id="newOrderBtn" class="btn btn-secondary">متابعة طلب آخر</button>
+      <button id="newOrderBtn" class="btn btn-secondary" data-i18n="trackAnother">متابعة طلب آخر</button>
     </section>
   </main>
 
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/i18n.js"></script>
   <script src="/alarm.js"></script>
   <script src="/customer.js"></script>
 </body>
