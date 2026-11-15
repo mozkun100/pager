@@ -58,7 +58,15 @@ function broadcastToCashiers() {
 
 // نرسل تحديث طلب معيّن لجوالاته فقط
 function notifyOrder(order) {
-  io.to(orderRoom(order.id)).emit('order:update', order);
+  io.to(orderRoom(order.id)).emit('order:update', { order, serverNow: Date.now() });
+}
+
+// نربط جوال العميل بغرفة طلبه (ونطلعه من أي غرفة طلب قديمة)
+function joinOrderRoom(socket, order) {
+  for (const room of socket.rooms) {
+    if (room.startsWith('order:')) socket.leave(room);
+  }
+  socket.join(orderRoom(order.id));
 }
 
 // ---------- 3) الاتصال المباشر ----------
@@ -70,6 +78,33 @@ io.on('connection', (socket) => {
     socket.join(CASHIER_ROOM);
     socket.emit('state', cashierState());
   });
+
+  // --- صفحة العميل ---
+
+  // العميل كتب رقم طلبه وضغط "فعّل التنبيه"
+  // ندوّر على طلب "نشط" بهذا الرقم فقط (المقفلة ما تُقبل)
+  socket.on('customer:join', ({ number } = {}, reply) => {
+    const n = Math.floor(Number(number));
+    const order = db.getActiveOrders().find((o) => o.number === n);
+    if (!order) {
+      log(`customer tried order #${number} -> not found`);
+      return reply?.({ ok: false, error: 'NOT_FOUND' });
+    }
+    joinOrderRoom(socket, order);
+    log(`customer joined order #${order.number}`);
+    reply?.({ ok: true, order, serverNow: Date.now() });
+  });
+
+  // إعادة الاتصال بعد انقطاع: نرجع بالرقم "السري" مو بالرقم الظاهر
+  // عشان لو الرقم 5 انقفل وانعطى لعميل جديد، ما يرتبط الجوال القديم بالطلب الجديد
+  socket.on('customer:rejoin', ({ id } = {}, reply) => {
+    const order = db.getOrderById(id);
+    if (!order) return reply?.({ ok: false, error: 'NOT_FOUND' });
+    if (order.status !== 'done') joinOrderRoom(socket, order);
+    reply?.({ ok: true, order, serverNow: Date.now() });
+  });
+
+  // --- أوامر الطلبات (الكاشير، و"تم الاستلام" من العميل كمان) ---
 
   // طلب جديد
   socket.on('order:create', (_data, reply) => {

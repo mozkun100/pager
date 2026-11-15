@@ -2,26 +2,59 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f7f9">
   <title>المنبه</title>
   <link rel="stylesheet" href="/style.css">
 </head>
-<body>
+<body class="customer">
+  <!-- شريط يظهر لو انقطع الاتصال -->
+  <div id="offlineBar" class="offline-bar hidden">انقطع الاتصال… جاري إعادة الاتصال</div>
+
   <main class="container">
-    <h1>المنبه</h1>
-    <p class="subtitle">صفحة العميل — قيد البناء (المرحلة الثالثة)</p>
-    <div class="card">
-      <span id="status" class="status"><span class="dot"></span><span id="statusText">غير متصل</span></span>
-    </div>
+    <header class="topbar">
+      <h1>المنبه</h1>
+      <span id="status" class="status"><span class="dot"></span></span>
+    </header>
+
+    <!-- ========== 1) إدخال رقم الطلب ========== -->
+    <section id="viewEntry" class="view">
+      <div class="card">
+        <label for="numberInput" class="field-label">اكتب رقم طلبك</label>
+        <input id="numberInput" class="number-input" type="number" inputmode="numeric"
+               min="1" autocomplete="off" placeholder="مثلاً 27">
+        <div id="entryError" class="error hidden"></div>
+        <button id="activateBtn" class="btn btn-big">🔔 فعّل التنبيه</button>
+      </div>
+      <p class="keep-open">📱 خلّ الصفحة مفتوحة عشان يوصلك التنبيه</p>
+    </section>
+
+    <!-- ========== 2) متابعة الطلب (مو جاهز / جاهز) ========== -->
+    <section id="viewOrder" class="view hidden">
+      <div id="orderPanel" class="order-panel">
+        <div class="panel-label">طلب رقم</div>
+        <div id="orderNumber" class="panel-number"></div>
+        <div id="orderStatusText" class="panel-status"></div>
+        <div id="orderTimer" class="panel-timer"></div>
+      </div>
+
+      <button id="receivedBtn" class="btn btn-received">تم الاستلام</button>
+      <p class="keep-open">📱 خلّ الصفحة مفتوحة عشان يوصلك التنبيه</p>
+      <button id="changeNumberBtn" class="link-btn">رقم غلط؟ غيّر الرقم</button>
+    </section>
+
+    <!-- ========== 3) شكراً ========== -->
+    <section id="viewDone" class="view hidden">
+      <div class="card thanks">
+        <div class="thanks-icon">🙏</div>
+        <h2>شكراً لك!</h2>
+        <p>تم استلام طلبك رقم <strong id="doneNumber"></strong>. بالعافية</p>
+      </div>
+      <button id="newOrderBtn" class="btn btn-secondary">متابعة طلب آخر</button>
+    </section>
   </main>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    const statusEl = document.getElementById('status');
-    const statusText = document.getElementById('statusText');
-    socket.on('connect', () => { statusEl.classList.add('online'); statusText.textContent = 'متصل بالسيرفر'; });
-    socket.on('disconnect', () => { statusEl.classList.remove('online'); statusText.textContent = 'غير متصل'; });
-  </script>
+  <script src="/customer.js"></script>
 </body>
 </html>

@@ -225,3 +225,100 @@ h1 { font-size: 1.6rem; margin: 0; }
   border-radius: 12px;
   font: inherit;
 }
+
+/* =============================================================
+   صفحة العميل (Mobile-first)
+   ============================================================= */
+
+.customer .container { padding-top: 16px; }
+
+.offline-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--danger);
+  color: #fff;
+  text-align: center;
+  padding: 10px;
+  font-weight: 700;
+  font-size: .95rem;
+}
+
+.field-label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.number-input {
+  width: 100%;
+  min-height: 72px;
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  font: inherit;
+  font-size: 2.2rem;
+  font-weight: 800;
+  text-align: center;
+  background: var(--bg);
+}
+.number-input:focus { outline: none; border-color: var(--primary); background: #fff; }
+.number-input + .error { margin: -4px 0 16px; }
+
+.keep-open {
+  text-align: center;
+  color: var(--muted);
+  font-size: .9rem;
+  margin: 16px 0;
+}
+
+/* لوحة حالة الطلب الكبيرة */
+.order-panel {
+  text-align: center;
+  padding: 28px 16px;
+  border-radius: 24px;
+  margin-bottom: 16px;
+  background: var(--warn-bg);
+  border: 2px solid #f6d9a8;
+  transition: background .3s, border-color .3s;
+}
+.order-panel.is-ready { background: var(--ok-bg); border-color: var(--ok); }
+
+.panel-label  { color: var(--muted); font-weight: 600; }
+.panel-number { font-size: 5.5rem; font-weight: 800; line-height: 1.05; }
+.panel-status { font-size: 1.7rem; font-weight: 800; color: var(--warn); margin-top: 8px; }
+.is-ready .panel-status { color: var(--ok); }
+.panel-timer {
+  margin-top: 10px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.btn-received { background: #e9edf2; color: var(--text); }
+.btn-received:hover:not(:disabled) { background: #dce2e9; }
+.btn-received.btn-received-strong { background: var(--ok); color: #fff; }
+.btn-received.btn-received-strong:hover:not(:disabled) { background: #188247; }
+
+.btn-secondary { background: #e9edf2; color: var(--text); }
+.btn-secondary:hover:not(:disabled) { background: #dce2e9; }
+
+.link-btn {
+  display: block;
+  margin: 0 auto;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font: inherit;
+  font-size: .9rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.thanks { text-align: center; padding: 36px 20px; }
+.thanks-icon { font-size: 3.5rem; }
+.thanks h2 { margin: 8px 0; font-size: 1.8rem; }
+.thanks p { color: var(--muted); margin: 0; }
