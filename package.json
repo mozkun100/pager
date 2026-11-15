@@ -4,7 +4,7 @@
   "description": "المنبه الإلكتروني - بديل جهاز البيجر في المطاعم والكافيهات",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node --disable-warning=ExperimentalWarning server.js"
   },
   "engines": {
     "node": ">=22"

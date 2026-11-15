@@ -9,15 +9,9 @@
 <body>
   <main class="container">
     <h1>المنبه</h1>
-    <p class="subtitle">المرحلة الأولى: تجربة الاتصال المباشر</p>
-
+    <p class="subtitle">صفحة العميل — قيد البناء (المرحلة الثالثة)</p>
     <div class="card">
       <span id="status" class="status"><span class="dot"></span><span id="statusText">غير متصل</span></span>
-    </div>
-
-    <div class="card">
-      <p>انتظر… لما يضغط الكاشير "إرسال تجربة" بتظهر رسالة هنا.</p>
-      <div id="msg" class="flash hidden"></div>
     </div>
   </main>
 
@@ -26,22 +20,8 @@
     const socket = io();
     const statusEl = document.getElementById('status');
     const statusText = document.getElementById('statusText');
-    const msg = document.getElementById('msg');
-
-    socket.on('connect', () => {
-      statusEl.classList.add('online');
-      statusText.textContent = 'متصل بالسيرفر';
-    });
-    socket.on('disconnect', () => {
-      statusEl.classList.remove('online');
-      statusText.textContent = 'غير متصل';
-    });
-
-    socket.on('test:pong', (data) => {
-      const time = new Date(data.at).toLocaleTimeString('ar');
-      msg.textContent = '✅ وصلت الرسالة من الكاشير — الساعة ' + time;
-      msg.classList.remove('hidden');
-    });
+    socket.on('connect', () => { statusEl.classList.add('online'); statusText.textContent = 'متصل بالسيرفر'; });
+    socket.on('disconnect', () => { statusEl.classList.remove('online'); statusText.textContent = 'غير متصل'; });
   </script>
 </body>
 </html>

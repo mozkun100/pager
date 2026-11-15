@@ -7,39 +7,60 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <main class="container">
-    <h1>لوحة الكاشير</h1>
-    <p class="subtitle">المرحلة الأولى: تجربة الاتصال المباشر</p>
+  <main class="container wide">
 
-    <div class="card">
+    <!-- الشريط العلوي -->
+    <header class="topbar">
+      <h1>لوحة الكاشير</h1>
       <span id="status" class="status"><span class="dot"></span><span id="statusText">غير متصل</span></span>
-    </div>
+    </header>
 
-    <div class="card">
-      <p>اضغط الزر، ولازم تظهر رسالة <strong>فوراً</strong> في الجوال اللي فاتح صفحة العميل.</p>
-      <button id="pingBtn" class="btn">إرسال تجربة للجوالات</button>
-    </div>
+    <!-- زر طلب جديد + آخر رقم -->
+    <section class="card new-order">
+      <button id="newOrderBtn" class="btn btn-big" disabled>+ طلب جديد</button>
+      <div id="lastNumberBox" class="last-number hidden">
+        <span class="label">الرقم الجديد</span>
+        <span id="lastNumber" class="number"></span>
+        <span class="hint">بلّغ العميل بهذا الرقم</span>
+      </div>
+      <div id="newOrderError" class="error hidden"></div>
+    </section>
+
+    <!-- قائمة الطلبات النشطة -->
+    <section>
+      <h2 class="section-title">الطلبات النشطة <span id="activeCount" class="count">0</span></h2>
+      <div id="emptyState" class="empty">ما فيه طلبات نشطة حالياً</div>
+      <div id="ordersGrid" class="orders-grid"></div>
+    </section>
+
+    <!-- الإعدادات -->
+    <details class="card settings">
+      <summary>⚙️ الإعدادات</summary>
+      <label for="maxInput">أعلى رقم للطلبات (بعده يرجع الترقيم إلى 1)</label>
+      <div class="row">
+        <input id="maxInput" type="number" min="1" max="9999" inputmode="numeric">
+        <button id="saveMaxBtn" class="btn btn-small">حفظ</button>
+      </div>
+      <div id="settingsMsg" class="hidden"></div>
+    </details>
   </main>
 
-  <!-- مكتبة الاتصال المباشر (السيرفر يقدّمها تلقائياً) -->
+  <!-- قالب بطاقة الطلب (نسخة منه لكل طلب) -->
+  <template id="orderTemplate">
+    <article class="order-card">
+      <div class="order-head">
+        <span class="order-number"></span>
+        <span class="badge"></span>
+      </div>
+      <div class="order-timer"></div>
+      <div class="order-actions">
+        <button class="btn btn-ready">جاهز</button>
+        <button class="btn btn-close">تم الاستلام</button>
+      </div>
+    </article>
+  </template>
+
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    const statusEl = document.getElementById('status');
-    const statusText = document.getElementById('statusText');
-
-    socket.on('connect', () => {
-      statusEl.classList.add('online');
-      statusText.textContent = 'متصل بالسيرفر';
-    });
-    socket.on('disconnect', () => {
-      statusEl.classList.remove('online');
-      statusText.textContent = 'غير متصل';
-    });
-
-    document.getElementById('pingBtn').addEventListener('click', () => {
-      socket.emit('test:ping');
-    });
-  </script>
+  <script src="/cashier.js"></script>
 </body>
 </html>
