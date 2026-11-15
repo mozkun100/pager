@@ -322,3 +322,64 @@ h1 { font-size: 1.6rem; margin: 0; }
 .thanks-icon { font-size: 3.5rem; }
 .thanks h2 { margin: 8px 0; font-size: 1.8rem; }
 .thanks p { color: var(--muted); margin: 0; }
+
+/* ---------- التنبيه (لما يجهز الطلب) ---------- */
+
+/* وميض الشاشة: يتبدّل بين الأخضر والأبيض مرة كل ثانية
+   (أبطأ من 3 ومضات بالثانية — آمن للعين) */
+body.alerting { animation: flash-bg 1s steps(1, end) infinite; }
+@keyframes flash-bg {
+  0%   { background: #1f9d55; }
+  50%  { background: #f6f7f9; }
+}
+body.alerting .topbar h1 { animation: flash-text 1s steps(1, end) infinite; }
+@keyframes flash-text {
+  0%   { color: #fff; }
+  50%  { color: var(--text); }
+}
+body.alerting .status { color: #fff; }
+
+/* لوحة الطلب تنبض */
+body.alerting .order-panel {
+  animation: pulse 1s ease-in-out infinite;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, .18);
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.03); }
+}
+
+/* زر إيقاف التنبيه: كبير وواضح */
+.btn-stop {
+  background: var(--text);
+  margin-bottom: 12px;
+}
+.btn-stop:hover:not(:disabled) { background: #000; }
+
+/* زر إعادة التفعيل بعد تحديث الصفحة */
+.btn-reactivate {
+  background: var(--warn);
+  margin-bottom: 16px;
+  font-size: 1.25rem;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.btn-reactivate:hover:not(:disabled) { background: #92400e; }
+
+/* الأزرار تحت لوحة الطلب: مسافة بينها */
+#viewOrder .btn + .btn { margin-top: 0; }
+#receivedBtn { margin-top: 4px; }
+
+/* لو الجوال مضبوط على "تقليل الحركة" نخفف الوميض */
+@media (prefers-reduced-motion: reduce) {
+  body.alerting { animation-duration: 2s; }
+  body.alerting .order-panel, .btn-reactivate { animation: none; }
+}
+
+/* الوميض يغطي الشاشة كاملة حتى لو المحتوى قصير */
+body.customer { min-height: 100vh; min-height: 100dvh; }
+
+/* أثناء الوميض: زر "تم الاستلام" له إطار أبيض عشان يبان فوق الأخضر،
+   والنصوص الصغيرة يتبدّل لونها مع الخلفية */
+body.alerting #receivedBtn { box-shadow: 0 0 0 3px #fff; }
+body.alerting .keep-open,
+body.alerting .link-btn { animation: flash-text 1s steps(1, end) infinite; }

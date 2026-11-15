@@ -31,12 +31,18 @@
 
     <!-- ========== 2) متابعة الطلب (مو جاهز / جاهز) ========== -->
     <section id="viewOrder" class="view hidden">
+      <!-- يظهر بعد تحديث الصفحة: المتصفح يحتاج ضغطة جديدة عشان يسمح بالصوت -->
+      <button id="reactivateBtn" class="btn btn-big btn-reactivate hidden">🔔 اضغط هنا لإعادة تفعيل التنبيه</button>
+
       <div id="orderPanel" class="order-panel">
         <div class="panel-label">طلب رقم</div>
         <div id="orderNumber" class="panel-number"></div>
         <div id="orderStatusText" class="panel-status"></div>
         <div id="orderTimer" class="panel-timer"></div>
       </div>
+
+      <!-- يظهر بس والتنبيه شغال — يوقف الصوت والاهتزاز في هذا الجوال فقط -->
+      <button id="stopAlarmBtn" class="btn btn-big btn-stop hidden">🔕 إيقاف التنبيه</button>
 
       <button id="receivedBtn" class="btn btn-received">تم الاستلام</button>
       <p class="keep-open">📱 خلّ الصفحة مفتوحة عشان يوصلك التنبيه</p>
@@ -55,6 +61,7 @@
   </main>
 
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/alarm.js"></script>
   <script src="/customer.js"></script>
 </body>
 </html>
