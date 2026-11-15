@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>المنبه — لوحة الكاشير</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="container">
+    <h1>لوحة الكاشير</h1>
+    <p class="subtitle">المرحلة الأولى: تجربة الاتصال المباشر</p>
+
+    <div class="card">
+      <span id="status" class="status"><span class="dot"></span><span id="statusText">غير متصل</span></span>
+    </div>
+
+    <div class="card">
+      <p>اضغط الزر، ولازم تظهر رسالة <strong>فوراً</strong> في الجوال اللي فاتح صفحة العميل.</p>
+      <button id="pingBtn" class="btn">إرسال تجربة للجوالات</button>
+    </div>
+  </main>
+
+  <!-- مكتبة الاتصال المباشر (السيرفر يقدّمها تلقائياً) -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const statusEl = document.getElementById('status');
+    const statusText = document.getElementById('statusText');
+
+    socket.on('connect', () => {
+      statusEl.classList.add('online');
+      statusText.textContent = 'متصل بالسيرفر';
+    });
+    socket.on('disconnect', () => {
+      statusEl.classList.remove('online');
+      statusText.textContent = 'غير متصل';
+    });
+
+    document.getElementById('pingBtn').addEventListener('click', () => {
+      socket.emit('test:ping');
+    });
+  </script>
+</body>
+</html>

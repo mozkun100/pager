@@ -1,0 +1,18 @@
+{
+  "name": "pager",
+  "version": "0.1.0",
+  "description": "المنبه الإلكتروني - بديل جهاز البيجر في المطاعم والكافيهات",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "express": "^4.22.3",
+    "socket.io": "^4.8.4"
+  }
+}
