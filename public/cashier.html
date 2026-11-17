@@ -7,7 +7,30 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <main class="container wide">
+  <!-- ===== شاشة الرمز (تظهر قبل اللوحة) ===== -->
+  <main id="lockView" class="container lock-view hidden">
+    <div class="topbar">
+      <span></span>
+      <button class="chip lang-btn" data-i18n="switchLang">English</button>
+    </div>
+    <form id="pinForm" class="card lock-card" autocomplete="off">
+      <div class="lock-icon">🔒</div>
+      <h1 id="lockTitle"></h1>
+      <p id="lockHint" class="subtitle"></p>
+      <div id="lockedOutMsg" class="note hidden" data-i18n="lockedOut"></div>
+
+      <input id="pinInput" class="pin-input" type="password" inputmode="numeric"
+             maxlength="4" pattern="[0-9]*" autocomplete="off" placeholder="••••">
+      <input id="pinConfirmInput" class="pin-input hidden" type="password" inputmode="numeric"
+             maxlength="4" pattern="[0-9]*" autocomplete="off" data-i18n-placeholder="pinConfirm">
+
+      <div id="pinError" class="error hidden"></div>
+      <button id="pinSubmit" type="submit" class="btn btn-big"></button>
+      <p id="forgotPin" class="forgot hidden" data-i18n="forgotPin"></p>
+    </form>
+  </main>
+
+  <main id="appView" class="container wide hidden">
 
     <!-- الشريط العلوي -->
     <header class="topbar">
@@ -16,6 +39,7 @@
         <span id="status" class="status"><span class="dot"></span><span id="statusText"></span></span>
         <a href="/qr" class="chip" data-i18n="printQr">🖨️ طباعة QR</a>
         <button class="chip lang-btn" data-i18n="switchLang">English</button>
+        <button id="lockBtn" class="chip" data-i18n="lockDevice">🔒 قفل</button>
       </div>
     </header>
 
@@ -46,6 +70,15 @@
         <button id="saveMaxBtn" class="btn btn-small" data-i18n="save">حفظ</button>
       </div>
       <div id="settingsMsg" class="hidden"></div>
+
+      <hr class="divider">
+      <h3 class="settings-sub" data-i18n="changePinTitle">تغيير رمز الدخول</h3>
+      <form id="changePinForm" class="pin-change" autocomplete="off">
+        <input id="currentPinInput" class="pin-small" type="password" inputmode="numeric" maxlength="4" data-i18n-placeholder="currentPin">
+        <input id="newPinInput" class="pin-small" type="password" inputmode="numeric" maxlength="4" data-i18n-placeholder="newPin">
+        <button type="submit" class="btn btn-small" data-i18n="changePinBtn">تغيير الرمز</button>
+      </form>
+      <div id="pinChangeMsg" class="hidden"></div>
     </details>
   </main>
 

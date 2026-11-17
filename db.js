@@ -29,6 +29,12 @@ db.exec(`
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );
+
+  -- الأجهزة اللي دخلت لوحة الكاشير بالرمز (نحفظ بصمة "تذكرة الدخول" بس)
+  CREATE TABLE IF NOT EXISTS cashier_sessions (
+    token_hash TEXT PRIMARY KEY,
+    created_at INTEGER NOT NULL
+  );
 `);
 
 // القيم الافتراضية للإعدادات
@@ -124,6 +130,68 @@ function closeOrder(publicId) {
   return res.changes > 0 ? getOrderById(publicId) : null;
 }
 
+// =============================================================
+//  رمز الدخول (PIN) للوحة الكاشير
+//  ما نحفظ الرمز نفسه أبداً — نحفظ "بصمة" مشفّرة منه (scrypt + ملح عشوائي)
+//  حتى لو أحد شاف ملف قاعدة البيانات ما يقدر يعرف الرمز
+// =============================================================
+
+function isValidPin(pin) {
+  return typeof pin === 'string' && /^\d{4}$/.test(pin); // 4 أرقام بالضبط
+}
+
+function isPinSet() {
+  return !!getSetting('pin_hash');
+}
+
+function setPin(pin) {
+  if (!isValidPin(pin)) throw new Error('INVALID_PIN');
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(pin, salt, 32).toString('hex');
+  db.prepare(`INSERT OR REPLACE INTO settings (key, value) VALUES ('pin_hash', ?)`)
+    .run(`${salt}:${hash}`);
+}
+
+function verifyPin(pin) {
+  const stored = getSetting('pin_hash');
+  if (!stored || typeof pin !== 'string') return false;
+  const [salt, hash] = stored.split(':');
+  const test = crypto.scryptSync(pin, salt, 32);
+  return crypto.timingSafeEqual(test, Buffer.from(hash, 'hex'));
+}
+
+// "تذكرة دخول": بعد ما يدخل الكاشير الرمز صح، نعطي جهازه تذكرة عشوائية
+// يحفظها الجهاز، وما يحتاج يدخل الرمز كل مرة
+const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex');
+
+function createSession() {
+  const token = crypto.randomBytes(32).toString('hex');
+  db.prepare('INSERT INTO cashier_sessions (token_hash, created_at) VALUES (?, ?)')
+    .run(sha256(token), Date.now());
+  return token;
+}
+
+function isValidSession(token) {
+  if (typeof token !== 'string' || !token) return false;
+  return !!db.prepare('SELECT 1 FROM cashier_sessions WHERE token_hash = ?').get(sha256(token));
+}
+
+function deleteSession(token) {
+  if (typeof token !== 'string') return;
+  db.prepare('DELETE FROM cashier_sessions WHERE token_hash = ?').run(sha256(token));
+}
+
+// نلغي كل التذاكر (مثلاً لما يتغيّر الرمز) — كل الأجهزة لازم تدخل الرمز الجديد
+function deleteAllSessions() {
+  db.prepare('DELETE FROM cashier_sessions').run();
+}
+
+// نسيت الرمز؟ نمسحه، وأول ما تفتح اللوحة تختار رمز جديد
+function resetPin() {
+  db.prepare(`DELETE FROM settings WHERE key = 'pin_hash'`).run();
+  deleteAllSessions();
+}
+
 // نحوّل صف قاعدة البيانات لكائن عادي بأسماء واضحة
 function toPlain(row) {
   return {
@@ -144,4 +212,13 @@ module.exports = {
   createOrder,
   markReady,
   closeOrder,
+  isValidPin,
+  isPinSet,
+  setPin,
+  verifyPin,
+  createSession,
+  isValidSession,
+  deleteSession,
+  deleteAllSessions,
+  resetPin,
 };

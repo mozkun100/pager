@@ -485,3 +485,47 @@ body.alerting .chip { background: #fff; }
   .sheet-text strong { font-size: 20pt; }
   .sheet-text span { font-size: 14pt; color: #444; }
 }
+
+/* =============================================================
+   شاشة رمز الدخول (PIN)
+   ============================================================= */
+.lock-view { max-width: 440px; }
+.lock-card { text-align: center; padding: 32px 24px; }
+.lock-icon { font-size: 2.6rem; }
+.lock-card h1 { margin: 8px 0 4px; }
+.lock-card .subtitle { margin-bottom: 20px; }
+.lock-card .note { text-align: start; }
+
+.pin-input {
+  width: 100%;
+  min-height: 72px;
+  margin-bottom: 12px;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg);
+  font: inherit;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: .5em;
+  text-align: center;
+  direction: ltr;
+}
+.pin-input::placeholder { letter-spacing: normal; font-size: 1.1rem; font-weight: 600; }
+.pin-input:focus { outline: none; border-color: var(--primary); background: #fff; }
+.lock-card .error { margin: 0 0 12px; }
+.forgot { color: var(--muted); font-size: .8rem; margin: 16px 0 0; }
+
+/* تغيير الرمز في الإعدادات */
+.divider { border: 0; border-top: 1px solid var(--border); margin: 24px 0 8px; }
+.settings-sub { font-size: 1rem; margin: 16px 0 8px; }
+.pin-change { display: flex; gap: 8px; flex-wrap: wrap; }
+.pin-small {
+  flex: 1 1 120px;
+  min-height: 48px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font: inherit;
+  text-align: center;
+  direction: ltr;
+}

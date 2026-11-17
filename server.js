@@ -104,15 +104,132 @@ function joinOrderRoom(socket, order) {
   socket.join(orderRoom(order.id));
 }
 
-// ---------- 3) الاتصال المباشر ----------
+// ---------- 3) حماية الرمز من التخمين ----------
+// 4 أرقام = 10,000 احتمال، فلازم نمنع أحد يجرب الأرقام وحدة وحدة:
+//  - بعد 5 محاولات غلط من نفس الجهاز ← يتقفل دقيقة
+//  - ولو كثرت المحاولات الغلط من كل الأجهزة (15 بالدقيقة) ← نقفل الدخول 5 دقايق للكل
+//    (الأجهزة اللي داخلة أصلاً ما تتأثر)
+const MAX_FAILS = 5;
+const LOCK_MS = 60 * 1000;
+const GLOBAL_MAX_FAILS = 15;
+const GLOBAL_LOCK_MS = 5 * 60 * 1000;
+const failures = new Map(); // عنوان الجهاز ← { count, lockedUntil }
+let globalFails = [];        // أوقات كل المحاولات الغلط
+let globalLockedUntil = 0;
+
+function clientAddress(socket) {
+  const h = socket.handshake.headers;
+  return h['cf-connecting-ip'] || (h['x-forwarded-for'] || '').split(',')[0].trim() || socket.handshake.address;
+}
+
+function lockRemaining(addr) {
+  const now = Date.now();
+  const own = failures.get(addr)?.lockedUntil || 0;
+  return Math.max(0, own - now, globalLockedUntil - now);
+}
+
+function recordFailure(addr) {
+  const now = Date.now();
+  const f = failures.get(addr) || { count: 0, lockedUntil: 0 };
+  f.count += 1;
+  if (f.count >= MAX_FAILS) { f.lockedUntil = now + LOCK_MS; f.count = 0; }
+  failures.set(addr, f);
+
+  globalFails = globalFails.filter((t) => now - t < 60 * 1000);
+  globalFails.push(now);
+  if (globalFails.length >= GLOBAL_MAX_FAILS) { globalLockedUntil = now + GLOBAL_LOCK_MS; globalFails = []; }
+}
+
+// ---------- 4) الاتصال المباشر ----------
 io.on('connection', (socket) => {
   log(`device connected     ${socket.id}`);
 
-  // --- لوحة الكاشير ---
-  socket.on('cashier:join', () => {
+  // أوامر الكاشير: ما تشتغل إلا إذا الجهاز داخل بالرمز
+  const cashierOnly = (handler) => (data, reply) => {
+    if (!socket.data.isCashier) return reply?.({ ok: false, error: 'UNAUTHORIZED' });
+    handler(data || {}, reply);
+  };
+
+  // نسجّل الجهاز ككاشير ونرسل له الطلبات
+  function enterCashier(token) {
+    socket.data.isCashier = true;
+    socket.data.token = token;
     socket.join(CASHIER_ROOM);
     socket.emit('state', cashierState());
+  }
+
+  // --- الدخول للوحة الكاشير ---
+
+  // هل فيه رمز محفوظ؟ (لو لا = أول مرة، الكاشير يختار رمز)
+  socket.on('cashier:status', (_data, reply) => {
+    reply?.({ pinSet: db.isPinSet() });
   });
+
+  // أول مرة: اختيار الرمز
+  socket.on('cashier:setup', ({ pin } = {}, reply) => {
+    if (db.isPinSet()) return reply?.({ ok: false, error: 'PIN_ALREADY_SET' });
+    if (!db.isValidPin(pin)) return reply?.({ ok: false, error: 'INVALID_PIN' });
+    db.setPin(pin);
+    const token = db.createSession();
+    log('cashier PIN was set');
+    enterCashier(token);
+    reply?.({ ok: true, token });
+  });
+
+  // الدخول بالرمز
+  socket.on('cashier:login', ({ pin } = {}, reply) => {
+    const addr = clientAddress(socket);
+    const wait = lockRemaining(addr);
+    if (wait > 0) return reply?.({ ok: false, error: 'LOCKED', seconds: Math.ceil(wait / 1000) });
+
+    if (!db.verifyPin(String(pin ?? ''))) {
+      recordFailure(addr);
+      log(`wrong cashier PIN from ${addr}`);
+      const lockedNow = lockRemaining(addr);
+      return reply?.(lockedNow > 0
+        ? { ok: false, error: 'LOCKED', seconds: Math.ceil(lockedNow / 1000) }
+        : { ok: false, error: 'WRONG_PIN' });
+    }
+    failures.delete(addr);
+    const token = db.createSession();
+    log('cashier logged in');
+    enterCashier(token);
+    reply?.({ ok: true, token });
+  });
+
+  // جهاز سبق ودخل: يرسل "تذكرته" بدل الرمز
+  socket.on('cashier:join', ({ token } = {}, reply) => {
+    if (!db.isValidSession(token)) return reply?.({ ok: false, error: 'UNAUTHORIZED' });
+    enterCashier(token);
+    reply?.({ ok: true });
+  });
+
+  // قفل هذا الجهاز (يطلع من اللوحة)
+  socket.on('cashier:logout', (_data, reply) => {
+    db.deleteSession(socket.data.token);
+    socket.data.isCashier = false;
+    socket.leave(CASHIER_ROOM);
+    reply?.({ ok: true });
+  });
+
+  // تغيير الرمز: لازم الرمز الحالي، وبعدها كل الأجهزة الثانية تطلع وتدخل الرمز الجديد
+  socket.on('cashier:changePin', cashierOnly(async ({ currentPin, newPin }, reply) => {
+    if (!db.verifyPin(String(currentPin ?? ''))) return reply?.({ ok: false, error: 'WRONG_PIN' });
+    if (!db.isValidPin(newPin)) return reply?.({ ok: false, error: 'INVALID_PIN' });
+    db.setPin(newPin);
+    db.deleteAllSessions();
+    const token = db.createSession();
+    socket.data.token = token;
+
+    for (const other of await io.in(CASHIER_ROOM).fetchSockets()) {
+      if (other.id === socket.id) continue;
+      other.data.isCashier = false;
+      other.leave(CASHIER_ROOM);
+      other.emit('cashier:locked');
+    }
+    log('cashier PIN was changed (other devices logged out)');
+    reply?.({ ok: true, token });
+  }));
 
   // --- صفحة العميل ---
 
@@ -139,10 +256,10 @@ io.on('connection', (socket) => {
     reply?.({ ok: true, order, serverNow: Date.now() });
   });
 
-  // --- أوامر الطلبات (الكاشير، و"تم الاستلام" من العميل كمان) ---
+  // --- أوامر الطلبات ---
 
-  // طلب جديد
-  socket.on('order:create', (_data, reply) => {
+  // طلب جديد (كاشير فقط)
+  socket.on('order:create', cashierOnly((_data, reply) => {
     try {
       const order = db.createOrder();
       log(`order #${order.number} created`);
@@ -151,10 +268,10 @@ io.on('connection', (socket) => {
     } catch (err) {
       reply?.({ ok: false, error: err.message });
     }
-  });
+  }));
 
-  // الطلب جاهز
-  socket.on('order:ready', ({ id } = {}, reply) => {
+  // الطلب جاهز (كاشير فقط)
+  socket.on('order:ready', cashierOnly(({ id }, reply) => {
     const order = db.markReady(id);
     if (order) {
       log(`order #${order.number} is READY`);
@@ -162,10 +279,13 @@ io.on('connection', (socket) => {
       notifyOrder(order);
     }
     reply?.({ ok: !!order });
-  });
+  }));
 
-  // تم الاستلام (يقفل الطلب)
+  // تم الاستلام: الكاشير، أو العميل لطلبه هو فقط
   socket.on('order:close', ({ id } = {}, reply) => {
+    const isOwnOrder = typeof id === 'string' && socket.rooms.has(orderRoom(id));
+    if (!socket.data.isCashier && !isOwnOrder) return reply?.({ ok: false, error: 'UNAUTHORIZED' });
+
     const order = db.closeOrder(id);
     if (order) {
       log(`order #${order.number} picked up (closed)`);
@@ -175,8 +295,8 @@ io.on('connection', (socket) => {
     reply?.({ ok: !!order });
   });
 
-  // تغيير الحد الأعلى للأرقام
-  socket.on('settings:setMax', ({ max } = {}, reply) => {
+  // تغيير الحد الأعلى للأرقام (كاشير فقط)
+  socket.on('settings:setMax', cashierOnly(({ max }, reply) => {
     try {
       const n = db.setMaxNumber(max);
       log(`max number set to ${n}`);
@@ -185,14 +305,14 @@ io.on('connection', (socket) => {
     } catch (err) {
       reply?.({ ok: false, error: err.message, maxActive: err.maxActive });
     }
-  });
+  }));
 
   socket.on('disconnect', () => {
     log(`device disconnected  ${socket.id}`);
   });
 });
 
-// ---------- 4) تشغيل السيرفر ----------
+// ---------- 5) تشغيل السيرفر ----------
 server.listen(PORT, '0.0.0.0', () => {
   console.log('\n  Pager server is running!\n');
   console.log('  On this computer:');
