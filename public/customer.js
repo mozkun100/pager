@@ -43,6 +43,7 @@ const store = {
 
 // ---------- التنقل بين الشاشات ----------
 function showView(name) {
+  if (name !== 'order') document.body.classList.remove('is-ready');
   for (const [key, el] of Object.entries(views)) {
     el.classList.toggle('hidden', key !== name);
   }
@@ -144,6 +145,7 @@ function applyOrder(order, serverNow) {
   orderNumber.textContent = order.number;
   orderStatusText.textContent = t(isReady ? 'isReady' : 'notReady');
   orderPanel.classList.toggle('is-ready', isReady);
+  document.body.classList.toggle('is-ready', isReady); // بعض التصاميم تلوّن الشاشة كاملة
   receivedBtn.classList.toggle('btn-received-strong', isReady);
   showView('order');
   updateTimer();

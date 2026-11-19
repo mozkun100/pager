@@ -553,3 +553,6 @@ body.alerting .chip { background: #fff; }
 @keyframes shrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 .btn-undo { min-height: 52px; background: var(--warn); }
 .btn-undo:hover:not(:disabled) { background: #92400e; }
+
+/* خط التثقيب: مخفي إلا في التصاميم اللي تستخدمه (مثل التذكرة) */
+.perf { display: none; }

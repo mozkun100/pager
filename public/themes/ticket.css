@@ -1,0 +1,234 @@
+/* =============================================================
+   تصميم "تذكرة"
+   مستوحى من تذاكر الانتظار الورقية: رقم ضخم على ورقة بحواف مثقّبة،
+   خلفية سوداء، ولما يجهز الطلب تنقلب الشاشة كلها أصفر إشارة.
+
+   هذا الملف يجي بعد style.css ويغيّر الشكل بس (الألوان، الخطوط، الحواف).
+   عشان تسوي تصميم ثاني: انسخ الملف، غيّر القيم، وبدّل الرابط في الصفحات.
+   ============================================================= */
+
+:root {
+  /* ألوان التذكرة */
+  --ink: #141414;        /* أسود الحبر */
+  --paper: #fffbea;      /* ورق التذكرة */
+  --paper-2: #f1ead0;    /* ورق أغمق (خلفية الكاشير) */
+  --signal: #ffd21f;     /* أصفر إشارة (جاهز) */
+  --hot: #e5452f;        /* أحمر (إيقاف / تراجع / متأخر) */
+  --ink-muted: #6d6a5f;  /* نص ثانوي على الورق */
+  --paper-muted: #b9b4a3;/* نص ثانوي على الأسود */
+  --perf: #cfc9b2;       /* خط التثقيب */
+
+  --font-display: "Alexandria", "Readex Pro", Tahoma, sans-serif;
+  --font-text: "Readex Pro", "Segoe UI", Tahoma, sans-serif;
+
+  /* نربطها بمتغيرات التنسيق الأساسي */
+  --bg: var(--paper-2);
+  --card: var(--paper);
+  --text: var(--ink);
+  --muted: var(--ink-muted);
+  --border: var(--ink);
+  --primary: var(--ink);
+  --primary-dark: #000;
+  --ok: var(--ink);
+  --ok-bg: var(--signal);
+  --warn: #7a5200;
+  --warn-bg: #ffe680;
+  --danger: var(--hot);
+  --danger-bg: #fde3de;
+  --radius: 6px;
+}
+
+html, body { font-family: var(--font-text); }
+h1, h2, .order-number, .last-number .number, .panel-number, .count { font-family: var(--font-display); }
+h1 { font-weight: 900; letter-spacing: -.01em; }
+
+/* ---------- أزرار عامة ---------- */
+.btn { border-radius: 4px; font-weight: 700; }
+.btn:hover:not(:disabled) { background: #000; }
+.chip {
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 700;
+}
+.chip:hover { background: var(--signal); }
+.error, .success, .note { border-radius: 4px; }
+
+/* نقطة الاتصال: أخضر = متصل، أحمر = مقطوع (تنشاف على الأسود والأصفر) */
+.status .dot { background: var(--hot); box-shadow: 0 0 0 2px var(--paper); }
+.status.online .dot { background: #1fb35a; }
+
+/* حقول الإدخال */
+.settings input, .pin-small, .select {
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: #fff;
+}
+
+/* =============================================================
+   لوحة الكاشير
+   ============================================================= */
+body.cashier { background: var(--paper-2); }
+
+.card {
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+}
+
+/* زر طلب جديد: أسود بنص أصفر (في لوحة الكاشير بس) */
+.cashier #newOrderBtn {
+  background: var(--ink);
+  color: var(--signal);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.8rem;
+  border-radius: 6px;
+}
+.cashier #newOrderBtn:hover:not(:disabled) { background: #000; }
+
+.last-number .number { color: var(--ink); font-weight: 900; font-size: 5rem; letter-spacing: -.03em; }
+
+.count { background: var(--ink); color: var(--paper); border-radius: 3px; }
+.empty { border: 2px dashed var(--ink-muted); border-radius: 6px; }
+
+/* بطاقة الطلب: تذكرة ورقية بإطار أسود */
+.order-card {
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+}
+.order-number { font-weight: 900; font-size: 3rem; letter-spacing: -.03em; }
+.badge { background: var(--ink); color: var(--paper); border-radius: 3px; }
+
+.order-card.is-ready { background: var(--signal); border-color: var(--ink); }
+.is-ready .badge { background: var(--ink); color: var(--signal); }
+.is-ready .order-timer { color: var(--ink); }
+.order-card.is-late .order-timer { color: var(--hot); font-weight: 700; }
+
+.btn-ready { background: var(--signal); color: var(--ink); }
+.btn-ready:hover:not(:disabled) { background: #ffc800; }
+.btn-close {
+  background: transparent;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+.btn-close:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
+
+/* المهلة قبل التنفيذ */
+.order-card.is-pending { border-color: var(--ink); box-shadow: 5px 5px 0 var(--ink); }
+.pending-text { color: var(--ink); }
+.pending-bar { background: var(--perf); border-radius: 0; }
+.pending-bar span { background: var(--ink); }
+.btn-undo { background: var(--hot); color: #fff; }
+.btn-undo:hover:not(:disabled) { background: #c7351f; }
+
+/* شاشة الرمز */
+.lock-card { border: 2px solid var(--ink); }
+.pin-input {
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: #fff;
+  font-family: var(--font-display);
+}
+.pin-input:focus { border-color: var(--ink); box-shadow: 0 0 0 3px var(--signal); background: #fff; }
+
+/* =============================================================
+   صفحة العميل
+   ============================================================= */
+body.customer { background: var(--ink); color: var(--paper); }
+.customer .topbar h1 { color: var(--paper); }
+.customer .status { color: var(--paper-muted); }
+.customer .chip { background: var(--signal); border-color: var(--signal); }
+
+/* بطاقة إدخال الرقم = تذكرة */
+.customer .card { background: var(--paper); color: var(--ink); border: 0; }
+.number-input {
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: #fff;
+  font-family: var(--font-display);
+  font-weight: 900;
+}
+.number-input:focus { border-color: var(--ink); box-shadow: 0 0 0 3px var(--signal); background: #fff; }
+#activateBtn { background: var(--signal); color: var(--ink); font-size: 1.3rem; }
+#activateBtn:hover:not(:disabled) { background: #ffc800; }
+
+.keep-open, .link-btn { color: var(--paper-muted); }
+
+/* لوحة الطلب: تذكرة بحواف مثقّبة على الجانبين */
+.order-panel {
+  background: var(--paper);
+  color: var(--ink);
+  border: 0;
+  border-radius: 8px;
+  padding: 22px 16px 24px;
+  -webkit-mask:
+    radial-gradient(circle 11px at 0 64%, transparent 98%, #000) ,
+    radial-gradient(circle 11px at 100% 64%, transparent 98%, #000);
+  -webkit-mask-composite: source-in;
+  mask:
+    radial-gradient(circle 11px at 0 64%, transparent 98%, #000) ,
+    radial-gradient(circle 11px at 100% 64%, transparent 98%, #000);
+  mask-composite: intersect;
+}
+.order-panel.is-ready { background: var(--paper); border: 0; }
+.panel-label { font-weight: 700; color: var(--ink-muted); }
+.panel-number { font-weight: 900; font-size: 7rem; line-height: .95; letter-spacing: -.04em; color: var(--ink); }
+.perf { display: block; border-top: 2px dashed var(--perf); margin: 14px 4px 10px; }
+.panel-status { font-family: var(--font-display); color: var(--ink); font-size: 1.6rem; }
+.is-ready .panel-status { color: var(--ink); }
+.panel-timer { color: var(--ink-muted); }
+
+/* الأزرار تحت التذكرة */
+.btn-received { background: transparent; color: var(--paper); box-shadow: inset 0 0 0 2px #3a3a3a; }
+.btn-received:hover:not(:disabled) { background: #222; }
+.btn-received.btn-received-strong { background: var(--signal); color: var(--ink); box-shadow: none; }
+.btn-received.btn-received-strong:hover:not(:disabled) { background: #ffc800; }
+.btn-stop { background: var(--hot); color: #fff; }
+.btn-stop:hover:not(:disabled) { background: #c7351f; }
+.btn-reactivate { background: var(--signal); color: var(--ink); }
+.btn-reactivate:hover:not(:disabled) { background: #ffc800; }
+.btn-secondary { background: transparent; color: var(--paper); box-shadow: inset 0 0 0 2px #3a3a3a; }
+.btn-secondary:hover:not(:disabled) { background: #222; }
+
+.thanks { background: var(--paper); }
+.thanks h2 { font-weight: 900; }
+.thanks p { color: var(--ink-muted); }
+
+.offline-bar { background: var(--hot); }
+
+/* ---------- الطلب جاهز: الشاشة كلها صفراء ---------- */
+body.customer.is-ready { background: var(--signal); color: var(--ink); }
+.customer.is-ready .topbar h1 { color: var(--ink); }
+.customer.is-ready .status { color: var(--ink); }
+.customer.is-ready .chip { background: var(--ink); color: var(--signal); border-color: var(--ink); }
+.customer.is-ready .keep-open, .customer.is-ready .link-btn { color: #5b4e00; }
+.customer.is-ready .btn-received.btn-received-strong { background: var(--ink); color: var(--signal); }
+
+/* ---------- التنبيه شغال: وميض أصفر/أسود ---------- */
+body.customer.alerting { animation: ticket-flash 1s steps(1, end) infinite; }
+@keyframes ticket-flash {
+  0%  { background: var(--signal); }
+  50% { background: var(--ink); }
+}
+body.customer.alerting .topbar h1,
+body.customer.alerting .keep-open,
+body.customer.alerting .link-btn { animation: ticket-flash-text 1s steps(1, end) infinite; }
+@keyframes ticket-flash-text {
+  0%  { color: var(--ink); }
+  50% { color: var(--paper); }
+}
+body.customer.alerting #receivedBtn { box-shadow: 0 0 0 2px var(--paper); }
+
+/* =============================================================
+   صفحة طباعة الـ QR
+   ============================================================= */
+body.qr-page { background: var(--paper-2); }
+.qr-sheet { background: var(--paper); border: 2px dashed var(--ink); border-radius: 6px; }
+.sheet-brand { font-family: var(--font-display); font-weight: 900; }
+.sheet-text strong { font-family: var(--font-display); }
+#printBtn { background: var(--ink); color: var(--signal); }
+@media print {
+  .qr-sheet { background: #fff; }
+}

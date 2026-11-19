@@ -3,9 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f6f7f9">
+  <meta name="theme-color" content="#141414">
   <title data-i18n-title="appName">المنبه</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alexandria:wght@700;900&family=Readex+Pro:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="/style.css">
+  <!-- التصميم الحالي: تذكرة (لتغيير التصميم بدّل هذا الملف) -->
+  <link rel="stylesheet" href="/themes/ticket.css">
 </head>
 <body class="customer">
   <!-- شريط يظهر لو انقطع الاتصال -->
@@ -40,6 +45,7 @@
       <div id="orderPanel" class="order-panel">
         <div class="panel-label" data-i18n="orderNo">طلب رقم</div>
         <div id="orderNumber" class="panel-number"></div>
+        <div class="perf" aria-hidden="true"></div>
         <div id="orderStatusText" class="panel-status"></div>
         <div id="orderTimer" class="panel-timer"></div>
       </div>
