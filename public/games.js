@@ -2,7 +2,7 @@
 //  ألعاب الانتظار
 //  6 ألعاب خفيفة بدون صوت، في 3 فئات:
 //   😌 رايقة: فقاعات، ذاكرة      🧠 ذكاء: رتّب الأرقام، تسلسل
-//   ⚡ سريعة: التقط، كدّس
+//   ⚡ سريعة: كاسر الألوان، كدّس
 //
 //  - تنفتح فوق صفحة العميل وهو ينتظر
 //  - تنقفل فوراً لما يجهز الطلب (customer.js يستدعي Games.close)
@@ -42,6 +42,7 @@ const Games = (() => {
     get(id) { try { return JSON.parse(localStorage.getItem('pager.best.' + id)); } catch { return null; } },
     set(id, v) { try { localStorage.setItem('pager.best.' + id, JSON.stringify(v)); } catch {} },
   };
+  const getBest = (def) => (def.readBest ? def.readBest() : bestStore.get(def.id));
   const isBetter = (def, score, best) =>
     best == null || (def.lowerIsBetter ? score < best : score > best);
 
@@ -138,7 +139,7 @@ const Games = (() => {
   }
 
   function renderBest(def) {
-    const best = bestStore.get(def.id);
+    const best = getBest(def);
     bestEl.textContent = best == null ? '' : `${t('best')}: ${best}`;
   }
 
@@ -165,7 +166,7 @@ const Games = (() => {
         const btn = document.createElement('button');
         btn.className = 'game-card';
         btn.dataset.game = def.id;
-        const best = bestStore.get(def.id);
+        const best = getBest(def);
         btn.innerHTML = `<span class="g-icon"></span><b></b><span class="g-desc"></span><span class="g-best"></span>`;
         btn.querySelector('.g-icon').textContent = def.icon;
         btn.querySelector('b').textContent = t(def.name);
@@ -199,6 +200,8 @@ const Games = (() => {
     stopGame();
     menuView.hidden = true;
     playView.hidden = false;
+    // الألعاب المستقلة لها عدادها الخاص، فنخفي سطر النتيجة حقنا
+    playView.classList.toggle('embedded', !!def.embedded);
     titleEl.textContent = `${def.icon} ${t(def.name)}`;
     scoreEl.textContent = '';
     renderBest(def);
@@ -505,90 +508,28 @@ const Games = (() => {
   });
 
   // =============================================================
-  //  ⚡ 5) التقط — التقط القهوة وابعد عن الفلفل
+  //  ⚡ 5) كاسر الألوان — لعبة مستقلة (ملفها public/games/color-breaker.html)
+  //  تنفتح داخل إطار (iframe) عشان تكون معزولة عن صفحة المنبه.
+  //  لما ينقفل الإطار تتوقف اللعبة كلها (الصوت والحركة) فوراً.
   // =============================================================
   games.push({
-    id: 'catch', cat: 'arcade', icon: '☕', name: 'gCatch', desc: 'gCatchDesc',
-    mount(host, api) {
-      const { canvas, ctx, w, h } = makeCanvas(host);
-      const c = api.colors;
-      const trayW = Math.min(110, w * 0.28), trayY = h - 46;
-      let trayX = w / 2, targetX = w / 2;
-      let items = [], spawnIn = 0.6, score = 0, lives = 3, time = 0, over = false, hurt = 0;
-      api.setScore(0);
-
-      const onMove = (e) => { targetX = pointerPos(canvas, e).x; };
-      canvas.addEventListener('pointerdown', onMove);
-      canvas.addEventListener('pointermove', onMove);
-
-      function lose() {
-        lives--;
-        hurt = 0.3;
-        if (lives <= 0 && !over) {
-          over = true;
-          lp.stop();
-          setTimeout(() => api.end(score), 300);
-        }
-      }
-
-      const lp = loop((dt) => {
-        time += dt;
-        const speedUp = 1 + time / 40;
-        spawnIn -= dt;
-        if (spawnIn <= 0) {
-          const bad = Math.random() < Math.min(0.45, 0.2 + time / 120);
-          items.push({ x: rand(20, w - 20), y: -20, bad, vy: rand(120, 170) * speedUp, rot: rand(-1, 1) });
-          spawnIn = Math.max(0.35, 0.9 - time / 60);
-        }
-        trayX += (targetX - trayX) * Math.min(1, dt * 14);
-        trayX = Math.max(trayW / 2, Math.min(w - trayW / 2, trayX));
-
-        ctx.clearRect(0, 0, w, h);
-        if (hurt > 0) { hurt -= dt; ctx.fillStyle = c.hot; ctx.globalAlpha = 0.15; ctx.fillRect(0, 0, w, h); ctx.globalAlpha = 1; }
-
-        ctx.font = '30px serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        for (const it of items) {
-          it.y += it.vy * dt;
-          ctx.fillText(it.bad ? '🌶️' : '☕', it.x, it.y);
-          const inTray = it.y >= trayY - 14 && it.y <= trayY + 10 && Math.abs(it.x - trayX) < trayW / 2 + 12;
-          if (inTray) {
-            it.gone = true;
-            if (it.bad) lose(); else { score++; api.setScore(score); }
-          } else if (it.y > h + 20) {
-            it.gone = true;
-            if (!it.bad) lose(); // طاحت القهوة!
-          }
-        }
-        items = items.filter((it) => !it.gone);
-
-        // الصينية
-        ctx.fillStyle = c.accent;
-        ctx.strokeStyle = c.fg;
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(trayX - trayW / 2, trayY, trayW, 14, 7);
-        else ctx.rect(trayX - trayW / 2, trayY, trayW, 14); // جوالات قديمة
-        ctx.fill();
-        ctx.stroke();
-
-        // القلوب
-        ctx.font = '18px serif';
-        ctx.textAlign = 'left';
-        for (let i = 0; i < 3; i++) {
-          ctx.globalAlpha = i < lives ? 1 : 0.2;
-          ctx.fillText('❤️', 10 + i * 24, 18);
-        }
-        ctx.globalAlpha = 1;
-      });
-
+    id: 'colorbreaker', cat: 'arcade', icon: '🎨', name: 'gBreaker', desc: 'gBreakerDesc',
+    embedded: true,
+    // أفضل نتيجة تحفظها اللعبة بنفسها
+    readBest() {
+      try { return parseInt(localStorage.getItem('cbBest') || '0', 10) || null; } catch { return null; }
+    },
+    mount(host) {
+      const frame = document.createElement('iframe');
+      frame.className = 'game-frame';
+      frame.src = '/games/color-breaker.html';
+      frame.title = t('gBreaker');
+      host.append(frame);
+      frame.addEventListener('load', () => { try { frame.contentWindow.focus(); } catch {} });
       return {
-        pause: lp.pause,
         destroy() {
-          lp.stop();
-          canvas.removeEventListener('pointerdown', onMove);
-          canvas.removeEventListener('pointermove', onMove);
+          frame.src = 'about:blank'; // يوقف الصوت والحركة فوراً
+          frame.remove();
         },
       };
     },
