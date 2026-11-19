@@ -118,8 +118,11 @@ function render() {
 
     card.classList.add(isReady ? 'is-ready' : 'is-preparing');
     card.dataset.id = order.id;
+    card.querySelector('.order-label').textContent = t('orderNo');
     card.querySelector('.order-number').textContent = order.number;
     card.querySelector('.badge').textContent = t(isReady ? 'statusReady' : 'statusPreparing');
+    // نفس الحالة كنص تحت خط التثقيب (يستخدمه تصميم التذكرة)
+    card.querySelector('.order-timer').dataset.status = t(isReady ? 'statusReady' : 'statusPreparing');
 
     const readyBtn = card.querySelector('.btn-ready');
     const closeBtn = card.querySelector('.btn-close');

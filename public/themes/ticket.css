@@ -67,14 +67,19 @@ h1 { font-weight: 900; letter-spacing: -.01em; }
 }
 
 /* =============================================================
-   لوحة الكاشير
+   لوحة الكاشير — خلفية سوداء مثل صفحة العميل، والطلبات تذاكر ورقية
    ============================================================= */
-body.cashier { background: var(--paper-2); }
+body.cashier { background: var(--ink); color: var(--paper); }
+.cashier .topbar h1 { color: var(--paper); }
+.cashier .status { color: var(--paper-muted); }
+.cashier .section-title { color: var(--paper); }
+.cashier .chip { border-color: var(--paper); }
 
 .card {
   border: 2px solid var(--ink);
   border-radius: 6px;
 }
+.cashier .card { border: 0; border-radius: 8px; color: var(--ink); }
 
 /* زر طلب جديد: أسود بنص أصفر (في لوحة الكاشير بس) */
 .cashier #newOrderBtn {
@@ -89,24 +94,66 @@ body.cashier { background: var(--paper-2); }
 
 .last-number .number { color: var(--ink); font-weight: 900; font-size: 5rem; letter-spacing: -.03em; }
 
-.count { background: var(--ink); color: var(--paper); border-radius: 3px; }
-.empty { border: 2px dashed var(--ink-muted); border-radius: 6px; }
+.count { background: var(--signal); color: var(--ink); border-radius: 3px; }
+.empty { border: 2px dashed #3a3a3a; border-radius: 8px; color: var(--paper-muted); }
 
-/* بطاقة الطلب: تذكرة ورقية بإطار أسود */
+/* ---------- بطاقة الطلب = تذكرة ----------
+   الرأس ارتفاعه ثابت، عشان خط التثقيب والفتحتين يجون دائماً بنفس المكان
+   (padding 16 + رأس 104 + مسافة 10 = الخط على بعد 130px من فوق) */
+.orders-grid { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; align-items: start; }
 .order-card {
+  --perf-y: 131px;
   background: var(--paper);
-  border: 2px solid var(--ink);
-  border-radius: 6px;
+  color: var(--ink);
+  border: 0;
+  border-radius: 8px;
+  padding: 16px 16px 18px;
+  text-align: center;
+  gap: 8px;
+  -webkit-mask:
+    radial-gradient(circle 11px at 0 var(--perf-y), transparent 98%, #000),
+    radial-gradient(circle 11px at 100% var(--perf-y), transparent 98%, #000);
+  -webkit-mask-composite: source-in;
+  mask:
+    radial-gradient(circle 11px at 0 var(--perf-y), transparent 98%, #000),
+    radial-gradient(circle 11px at 100% var(--perf-y), transparent 98%, #000);
+  mask-composite: intersect;
 }
-.order-number { font-weight: 900; font-size: 3rem; letter-spacing: -.03em; }
-.badge { background: var(--ink); color: var(--paper); border-radius: 3px; }
+.order-head {
+  height: 104px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.order-label { display: block; font-size: .8rem; font-weight: 700; color: var(--ink-muted); }
+.order-number { font-weight: 900; font-size: 4.4rem; line-height: .95; letter-spacing: -.04em; }
+.order-card .perf { margin: 2px -4px 4px; }
 
-.order-card.is-ready { background: var(--signal); border-color: var(--ink); }
-.is-ready .badge { background: var(--ink); color: var(--signal); }
-.is-ready .order-timer { color: var(--ink); }
-.order-card.is-late .order-timer { color: var(--hot); font-weight: 700; }
+/* الحالة تنعرض تحت خط التثقيب (مثل "طلبك مو جاهز" عند العميل) بدل الشارة اللي فوق */
+.order-head .badge { display: none; }
+.order-timer { color: var(--ink-muted); font-weight: 600; }
+.order-timer::before {
+  content: attr(data-status);
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
 
-.btn-ready { background: var(--signal); color: var(--ink); }
+/* التذكرة الجاهزة: صفراء */
+.order-card.is-ready { background: var(--signal); border: 0; }
+.order-card.is-ready .order-label,
+.order-card.is-ready .order-timer { color: #5b4e00; }
+.order-card.is-ready .perf { border-color: #d8b000; }
+.order-card.is-late .order-timer { color: var(--hot); }
+.order-card.is-late .order-timer::before { color: var(--hot); }
+
+.order-actions { margin-top: 4px; }
+.btn-ready { background: var(--signal); color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
 .btn-ready:hover:not(:disabled) { background: #ffc800; }
 .btn-close {
   background: transparent;
@@ -114,10 +161,11 @@ body.cashier { background: var(--paper-2); }
   box-shadow: inset 0 0 0 2px var(--ink);
 }
 .btn-close:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
+.is-ready .btn-close { background: var(--ink); color: var(--signal); }
 
-/* المهلة قبل التنفيذ */
-.order-card.is-pending { border-color: var(--ink); box-shadow: 5px 5px 0 var(--ink); }
-.pending-text { color: var(--ink); }
+/* المهلة قبل التنفيذ: التذكرة تصير بيضاء، والعد التنازلي واضح */
+.order-card.is-pending { background: #fff; }
+.pending-text { color: var(--ink); font-size: .85rem; }
 .pending-bar { background: var(--perf); border-radius: 0; }
 .pending-bar span { background: var(--ink); }
 .btn-undo { background: var(--hot); color: #fff; }

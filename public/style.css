@@ -556,3 +556,6 @@ body.alerting .chip { background: #fff; }
 
 /* خط التثقيب: مخفي إلا في التصاميم اللي تستخدمه (مثل التذكرة) */
 .perf { display: none; }
+
+/* عنوان "طلب رقم" فوق رقم البطاقة: مخفي إلا في التصاميم اللي تستخدمه */
+.order-label { display: none; }
