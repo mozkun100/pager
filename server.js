@@ -83,6 +83,7 @@ function cashierState() {
     // كل طلب معه "pending" لو عليه أمر ينتظر انتهاء المهلة
     orders: db.getActiveOrders().map((o) => ({ ...o, pending: pendingInfo(o.id) })),
     maxNumber: db.getMaxNumber(),
+    gamesEnabled: db.getGamesEnabled(),
     serverNow: Date.now(), // عشان العدادات تكون دقيقة حتى لو ساعة الجهاز مختلفة
   };
 }
@@ -195,8 +196,12 @@ function recordFailure(addr) {
 }
 
 // ---------- 4) الاتصال المباشر ----------
+// إعدادات عامة تحتاجها صفحة العميل (مثل: الألعاب مشغّلة ولا لا)
+const publicSettings = () => ({ gamesEnabled: db.getGamesEnabled() });
+
 io.on('connection', (socket) => {
   log(`device connected     ${socket.id}`);
+  socket.emit('public:settings', publicSettings());
 
   // أوامر الكاشير: ما تشتغل إلا إذا الجهاز داخل بالرمز
   const cashierOnly = (handler) => (data, reply) => {
@@ -371,6 +376,15 @@ io.on('connection', (socket) => {
     } catch (err) {
       reply?.({ ok: false, error: err.message, maxActive: err.maxActive });
     }
+  }));
+
+  // تشغيل/إطفاء ألعاب الانتظار (كاشير فقط) — يوصل لكل الجوالات فوراً
+  socket.on('settings:setGames', cashierOnly(({ enabled }, reply) => {
+    const on = db.setGamesEnabled(!!enabled);
+    log(`waiting games ${on ? 'enabled' : 'disabled'}`);
+    broadcastToCashiers();
+    io.emit('public:settings', publicSettings());
+    reply?.({ ok: true, enabled: on });
   }));
 
   socket.on('disconnect', () => {

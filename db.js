@@ -40,6 +40,7 @@ db.exec(`
 // القيم الافتراضية للإعدادات
 db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('max_number', '50')`).run();
 db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('last_number', '0')`).run();
+db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('games_enabled', '1')`).run();
 
 // ---------- الإعدادات ----------
 function getSetting(key) {
@@ -70,6 +71,15 @@ function setMaxNumber(n) {
   }
   setSetting('max_number', n);
   return n;
+}
+
+// ألعاب الانتظار في صفحة العميل (مشغّلة أو مطفية)
+function getGamesEnabled() {
+  return getSetting('games_enabled') === '1';
+}
+function setGamesEnabled(on) {
+  setSetting('games_enabled', on ? '1' : '0');
+  return !!on;
 }
 
 // ---------- الطلبات ----------
@@ -207,6 +217,8 @@ function toPlain(row) {
 module.exports = {
   getMaxNumber,
   setMaxNumber,
+  getGamesEnabled,
+  setGamesEnabled,
   getActiveOrders,
   getOrderById,
   createOrder,

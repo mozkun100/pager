@@ -55,6 +55,7 @@ socket.on('state', (state) => {
   clockOffset = state.serverNow - Date.now();
   orders = state.orders;
   if (document.activeElement !== maxInput) maxInput.value = state.maxNumber;
+  $('gamesToggle').checked = !!state.gamesEnabled;
   render();
 });
 
@@ -97,6 +98,23 @@ saveMaxBtn.addEventListener('click', () => {
       showLock('login');
     } else {
       showError(settingsMsg, t(ERROR_KEYS[res.error] || 'errGeneric', { max: res.maxActive }));
+    }
+  });
+});
+
+// تشغيل/إطفاء ألعاب الانتظار (يوصل لجوالات العملاء فوراً)
+$('gamesToggle').addEventListener('change', (e) => {
+  const enabled = e.target.checked;
+  socket.emit('settings:setGames', { enabled }, (res) => {
+    const msg = $('gamesMsg');
+    if (res.ok) {
+      msg.className = 'success';
+      msg.textContent = t(res.enabled ? 'gamesOn' : 'gamesOff');
+    } else if (res.error === 'UNAUTHORIZED') {
+      showLock('login');
+    } else {
+      e.target.checked = !enabled;
+      showError(msg, t('errGeneric'));
     }
   });
 });

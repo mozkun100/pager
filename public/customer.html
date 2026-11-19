@@ -50,6 +50,9 @@
         <div id="orderTimer" class="panel-timer"></div>
       </div>
 
+      <!-- ألعاب الانتظار: يظهر بس والطلب مو جاهز -->
+      <button id="playBtn" class="btn btn-play hidden" data-i18n="playWhileWaiting">🎮 العب وأنت تنتظر</button>
+
       <!-- يظهر بس والتنبيه شغال — يوقف الصوت والاهتزاز في هذا الجوال فقط -->
       <button id="stopAlarmBtn" class="btn btn-big btn-stop hidden" data-i18n="stopAlarm">🔕 إيقاف التنبيه</button>
 
@@ -69,9 +72,32 @@
     </section>
   </main>
 
+  <!-- ===== ألعاب الانتظار (شاشة كاملة فوق الصفحة) ===== -->
+  <div id="gamesOverlay" class="games-overlay" hidden>
+    <div class="games-menu">
+      <header class="games-bar">
+        <h2 data-i18n="gamesTitle">العب وأنت تنتظر</h2>
+        <button class="chip games-close" data-i18n="closeGames">✕ إغلاق</button>
+      </header>
+      <p class="games-note" data-i18n="gamesNote"></p>
+      <div class="games-list"></div>
+    </div>
+    <div class="games-play" hidden>
+      <header class="games-bar">
+        <button class="chip games-back" data-i18n="otherGames">الألعاب</button>
+        <div class="game-title"></div>
+        <button class="chip games-close" data-i18n="closeGames">✕ إغلاق</button>
+      </header>
+      <div class="game-meta"><span class="game-score"></span><span class="game-best"></span></div>
+      <div class="game-stage"></div>
+      <div class="game-result" hidden></div>
+    </div>
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
   <script src="/i18n.js"></script>
   <script src="/alarm.js"></script>
+  <script src="/games.js"></script>
   <script src="/customer.js"></script>
 </body>
 </html>

@@ -559,3 +559,163 @@ body.alerting .chip { background: #fff; }
 
 /* عنوان "طلب رقم" فوق رقم البطاقة: مخفي إلا في التصاميم اللي تستخدمه */
 .order-label { display: none; }
+
+/* =============================================================
+   ألعاب الانتظار
+   ألوان الألعاب من هذي المتغيرات (كل تصميم يقدر يغيّرها)
+   ============================================================= */
+.games-overlay {
+  --g-bg: var(--card);
+  --g-fg: var(--text);
+  --g-muted: #b8c0c8;
+  --g-accent: var(--primary);
+  --g-hot: var(--danger);
+  --g-c1: #2f6fed; --g-c2: #1f9d55; --g-c3: #d97706; --g-c4: #d64545;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px));
+  overflow: hidden;
+}
+.games-overlay[hidden] { display: none; }
+body.games-open { overflow: hidden; }
+
+.games-menu, .games-play { display: flex; flex-direction: column; min-height: 0; flex: 1; gap: 10px; }
+.games-menu[hidden], .games-play[hidden] { display: none; }
+.games-menu { overflow-y: auto; }
+.games-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.games-bar h2 { margin: 0; font-size: 1.4rem; }
+.games-note { margin: 0; color: var(--muted); font-size: .85rem; }
+
+.game-cat h3 { margin: 12px 0 8px; font-size: 1.05rem; display: flex; align-items: baseline; gap: 8px; }
+.game-cat h3 small { color: var(--muted); font-size: .8rem; font-weight: 500; }
+.game-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.game-card {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  text-align: start;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.game-card .g-icon { font-size: 1.8rem; line-height: 1.2; }
+.game-card b { font-size: 1.05rem; }
+.game-card .g-desc { font-size: .78rem; color: var(--muted); line-height: 1.4; }
+.game-card .g-best { font-size: .75rem; font-weight: 700; min-height: 1em; margin-top: 4px; }
+
+.game-title { font-weight: 700; font-size: 1.1rem; }
+.game-meta { display: flex; justify-content: space-between; font-weight: 700; font-variant-numeric: tabular-nums; min-height: 1.5em; }
+.game-best { color: var(--muted); }
+.game-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  border-radius: var(--radius);
+  background: var(--g-bg);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.game-canvas { position: absolute; inset: 0; touch-action: none; }
+
+.game-result {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, .55);
+  padding: 20px;
+  z-index: 2;
+}
+.game-result[hidden] { display: none; }
+.result-card {
+  background: var(--g-bg);
+  color: var(--g-fg);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  width: min(320px, 100%);
+  display: grid;
+  gap: 10px;
+  text-align: center;
+}
+.result-card h3 { margin: 0; font-size: 1.6rem; }
+.result-card p { margin: 0; font-size: 1.1rem; font-weight: 700; }
+.result-card .new-best { color: var(--g-accent); }
+
+/* شبكة المربعات (ذاكرة / رتّب / تسلسل) */
+.tile-grid {
+  display: grid;
+  gap: 8px;
+  width: min(92%, 360px);
+  aspect-ratio: 1;
+  max-height: 92%;
+}
+.tile-grid.g3 { grid-template-columns: repeat(3, 1fr); }
+.tile-grid.g4 { grid-template-columns: repeat(4, 1fr); }
+
+.mem-card {
+  position: relative;
+  border: 0;
+  padding: 0;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  perspective: 600px;
+}
+.mem-card span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  backface-visibility: hidden;
+  transition: transform .3s;
+  font-size: 1.8rem;
+}
+.mem-card .back { background: var(--g-fg); }
+.mem-card .back::after { content: "?"; color: var(--g-bg); font-weight: 800; font-size: 1.4rem; }
+.mem-card .front { background: #fff; transform: rotateY(180deg); box-shadow: inset 0 0 0 2px var(--g-fg); }
+.mem-card.open .back { transform: rotateY(180deg); }
+.mem-card.open .front { transform: rotateY(0); }
+.mem-card.done .front { background: var(--g-accent); }
+
+.slide-tile {
+  border: 0;
+  border-radius: 10px;
+  background: var(--g-fg);
+  color: var(--g-bg);
+  font: inherit;
+  font-size: 2.2rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.slide-tile.in-place { background: var(--g-accent); color: var(--g-fg); }
+.slide-tile.empty { background: transparent; box-shadow: inset 0 0 0 2px var(--g-muted); cursor: default; }
+
+.seq-wrap { display: grid; justify-items: center; gap: 14px; width: 100%; }
+.seq-status { font-weight: 800; font-size: 1.3rem; min-height: 1.5em; color: var(--g-fg); }
+.seq-wrap .tile-grid { max-height: none; }
+.seq-tile {
+  border: 0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: inset 0 0 0 2px var(--g-fg);
+  cursor: pointer;
+  transition: background .1s, transform .1s;
+}
+.seq-tile.lit { background: var(--g-accent); transform: scale(.94); }
+.seq-tile.wrong { background: var(--g-hot); }
+
+.btn-play { margin-bottom: 12px; }
+.toggle { display: flex; align-items: center; gap: 10px; font-weight: 700; cursor: pointer; margin-top: 16px; }
+.toggle input { width: 22px; height: 22px; accent-color: var(--primary); }
+.setting-hint { margin: 6px 0 0; color: var(--muted); font-size: .85rem; }

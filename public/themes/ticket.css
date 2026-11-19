@@ -280,3 +280,37 @@ body.qr-page { background: var(--paper-2); }
 @media print {
   .qr-sheet { background: #fff; }
 }
+
+/* =============================================================
+   ألعاب الانتظار (بأسلوب التذكرة)
+   ============================================================= */
+.games-overlay {
+  --g-bg: var(--paper);
+  --g-fg: var(--ink);
+  --g-muted: var(--perf);
+  --g-accent: var(--signal);
+  --g-hot: var(--hot);
+  --g-c1: #ffd21f; --g-c2: #e5452f; --g-c3: #3fa7d6; --g-c4: #59c27c;
+  background: var(--ink);
+  color: var(--paper);
+}
+.games-bar h2, .game-title { font-family: var(--font-display); color: var(--paper); }
+.games-note { color: var(--paper-muted); }
+.game-cat h3 { color: var(--paper); font-family: var(--font-display); }
+.game-cat h3 small { color: var(--paper-muted); font-family: var(--font-text); }
+.game-card { background: var(--paper); color: var(--ink); border: 0; border-radius: 8px; }
+.game-card:active { background: var(--signal); }
+.game-card b { font-family: var(--font-display); }
+.game-card .g-desc { color: var(--ink-muted); }
+.game-meta { color: var(--paper); }
+.game-best { color: var(--signal); }
+.game-stage { border-radius: 8px; }
+.result-card { border-radius: 8px; }
+.result-card h3 { font-family: var(--font-display); font-weight: 900; }
+.result-card .new-best { color: var(--ink); background: var(--signal); border-radius: 4px; padding: 4px; }
+.result-card .btn-secondary { color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
+.slide-tile { font-family: var(--font-display); font-weight: 900; border-radius: 6px; }
+.btn-play { background: var(--paper); color: var(--ink); }
+.btn-play:hover:not(:disabled) { background: var(--signal); }
+.cashier .toggle { color: var(--ink); }
+.toggle input { accent-color: var(--ink); }

@@ -23,6 +23,7 @@ const orderTimer = $('orderTimer');
 const receivedBtn = $('receivedBtn');
 const stopAlarmBtn = $('stopAlarmBtn');
 const reactivateBtn = $('reactivateBtn');
+const playBtn = $('playBtn');
 
 // الحالة الحالية
 let currentOrder = null; // الطلب اللي يتابعه هذا الجوال
@@ -75,6 +76,14 @@ socket.on('connect', () => {
 socket.on('disconnect', () => {
   statusEl.classList.remove('online');
   if (currentOrder) offlineBar.classList.remove('hidden');
+});
+
+// إعدادات عامة من الكاشير (مثل تشغيل/إطفاء الألعاب)
+let gamesEnabled = true;
+socket.on('public:settings', (settings) => {
+  gamesEnabled = !!settings.gamesEnabled;
+  if (!gamesEnabled) Games.close();
+  updatePlayBtn();
 });
 
 // تحديث يخص طلبنا نحن فقط (السيرفر ما يرسل لنا غيره)
@@ -130,6 +139,10 @@ function applyOrder(order, serverNow) {
   clockOffset = serverNow - Date.now();
   currentOrder = order;
 
+  // الألعاب بس وقت الانتظار: أول ما يجهز (أو ينقفل) الطلب نقفلها فوراً
+  if (order.status !== 'preparing') Games.close();
+  updatePlayBtn();
+
   if (order.status === 'done') {
     $('thanksBody').textContent = t('thanksBody', { number: order.number });
     reactivateBtn.classList.add('hidden');
@@ -151,6 +164,13 @@ function applyOrder(order, serverNow) {
   updateTimer();
   syncAlarm();
 }
+
+// زر "العب وأنت تنتظر"
+function updatePlayBtn() {
+  const show = gamesEnabled && currentOrder && currentOrder.status === 'preparing';
+  playBtn.classList.toggle('hidden', !show);
+}
+playBtn.addEventListener('click', () => Games.open());
 
 // "منذ 03:12" / "جاهز منذ 00:45"
 function updateTimer() {
@@ -231,6 +251,8 @@ $('newOrderBtn').addEventListener('click', resetToEntry);
 
 function resetToEntry() {
   currentOrder = null;
+  Games.close();
+  updatePlayBtn();
   store.del('order');
   store.del('stopped');
   syncAlarm();
