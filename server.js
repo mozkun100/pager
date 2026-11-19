@@ -80,10 +80,64 @@ const orderRoom = (id) => `order:${id}`;
 // الحالة الكاملة اللي تحتاجها لوحة الكاشير
 function cashierState() {
   return {
-    orders: db.getActiveOrders(),
+    // كل طلب معه "pending" لو عليه أمر ينتظر انتهاء المهلة
+    orders: db.getActiveOrders().map((o) => ({ ...o, pending: pendingInfo(o.id) })),
     maxNumber: db.getMaxNumber(),
     serverNow: Date.now(), // عشان العدادات تكون دقيقة حتى لو ساعة الجهاز مختلفة
   };
+}
+
+// =============================================================
+//  المهلة قبل التنفيذ (5 ثواني) — عشان الضغط بالغلط
+//  الكاشير يضغط "جاهز" أو "تم الاستلام" ← ما ننفذ فوراً، ننتظر 5 ثواني
+//  وخلالها يقدر يضغط "تراجع" ← ينلغي الأمر، وجوال العميل ما يدري بشي
+// =============================================================
+const UNDO_MS = 5000;
+const pending = new Map(); // رقم الطلب السري ← { type: 'ready' | 'close', until, timer }
+
+function pendingInfo(id) {
+  const p = pending.get(id);
+  return p ? { type: p.type, until: p.until, total: UNDO_MS } : null;
+}
+
+// نجدول الأمر، وبعد المهلة ننفذه
+function schedule(id, type, run) {
+  if (pending.has(id)) return false; // فيه أمر ثاني ينتظر على نفس الطلب
+  const timer = setTimeout(() => {
+    pending.delete(id);
+    run();
+  }, UNDO_MS);
+  pending.set(id, { type, until: Date.now() + UNDO_MS, timer });
+  broadcastToCashiers();
+  return true;
+}
+
+// تراجع: نلغي الأمر قبل ما ينفذ
+function cancelPending(id) {
+  const p = pending.get(id);
+  if (!p) return false;
+  clearTimeout(p.timer);
+  pending.delete(id);
+  return true;
+}
+
+// التنفيذ الفعلي
+function commitReady(id) {
+  const order = db.markReady(id);
+  if (order) {
+    log(`order #${order.number} is READY`);
+    notifyOrder(order);
+  }
+  broadcastToCashiers();
+}
+
+function commitClose(id) {
+  const order = db.closeOrder(id);
+  if (order) {
+    log(`order #${order.number} picked up (closed)`);
+    notifyOrder(order);
+  }
+  broadcastToCashiers();
 }
 
 // نرسل التحديث لكل شاشات الكاشير
@@ -270,30 +324,42 @@ io.on('connection', (socket) => {
     }
   }));
 
-  // الطلب جاهز (كاشير فقط)
+  // الطلب جاهز (كاشير فقط) — ينفذ بعد 5 ثواني إلا إذا تراجع
   socket.on('order:ready', cashierOnly(({ id }, reply) => {
-    const order = db.markReady(id);
-    if (order) {
-      log(`order #${order.number} is READY`);
-      broadcastToCashiers();
-      notifyOrder(order);
-    }
-    reply?.({ ok: !!order });
+    const order = db.getOrderById(id);
+    if (!order || order.status !== 'preparing') return reply?.({ ok: false });
+    const ok = schedule(id, 'ready', () => commitReady(id));
+    reply?.({ ok });
   }));
 
-  // تم الاستلام: الكاشير، أو العميل لطلبه هو فقط
+  // تم الاستلام
+  //  - الكاشير: بعد 5 ثواني إلا إذا تراجع
+  //  - العميل (لطلبه هو فقط): فوراً، لأنه أكّد بنفسه
   socket.on('order:close', ({ id } = {}, reply) => {
-    const isOwnOrder = typeof id === 'string' && socket.rooms.has(orderRoom(id));
-    if (!socket.data.isCashier && !isOwnOrder) return reply?.({ ok: false, error: 'UNAUTHORIZED' });
+    const order = typeof id === 'string' ? db.getOrderById(id) : null;
+    if (!order || order.status === 'done') return reply?.({ ok: false });
 
-    const order = db.closeOrder(id);
-    if (order) {
-      log(`order #${order.number} picked up (closed)`);
-      broadcastToCashiers();
-      notifyOrder(order);
+    if (socket.data.isCashier) {
+      const ok = schedule(id, 'close', () => commitClose(id));
+      return reply?.({ ok });
     }
-    reply?.({ ok: !!order });
+
+    if (!socket.rooms.has(orderRoom(id))) return reply?.({ ok: false, error: 'UNAUTHORIZED' });
+    cancelPending(id); // لو الكاشير كان ضاغط شي على نفس الطلب، ما عاد له داعي
+    commitClose(id);
+    reply?.({ ok: true });
   });
+
+  // تراجع (كاشير فقط)
+  socket.on('order:undo', cashierOnly(({ id }, reply) => {
+    const p = pending.get(id);
+    const ok = cancelPending(id);
+    if (ok) {
+      log(`undo: ${p.type} cancelled for order #${db.getOrderById(id)?.number}`);
+      broadcastToCashiers();
+    }
+    reply?.({ ok });
+  }));
 
   // تغيير الحد الأعلى للأرقام (كاشير فقط)
   socket.on('settings:setMax', cashierOnly(({ max }, reply) => {

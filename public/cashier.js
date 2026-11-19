@@ -135,11 +135,32 @@ function render() {
       });
     }
 
+    // بدون رسالة تأكيد — عندنا مهلة 5 ثواني للتراجع بدلها
     closeBtn.addEventListener('click', () => {
-      if (!confirm(t('confirmClose', { number: order.number }))) return;
       closeBtn.disabled = true;
       socket.emit('order:close', { id: order.id });
     });
+
+    // خلال المهلة: نخفي الأزرار ونعرض العد التنازلي + زر التراجع
+    if (order.pending) {
+      card.classList.add('is-pending');
+      card.querySelector('.order-actions').classList.add('hidden');
+      const box = card.querySelector('.order-pending');
+      box.classList.remove('hidden');
+
+      // شريط يتناقص لين تخلص المهلة (يكمل من مكانه حتى لو انرسمت القائمة من جديد)
+      const remaining = Math.max(0, order.pending.until - (Date.now() + clockOffset));
+      const bar = box.querySelector('.pending-bar span');
+      bar.style.animationDuration = order.pending.total + 'ms';
+      bar.style.animationDelay = -(order.pending.total - remaining) + 'ms';
+
+      const undoBtn = box.querySelector('.btn-undo');
+      undoBtn.textContent = t('undo');
+      undoBtn.addEventListener('click', () => {
+        undoBtn.disabled = true;
+        socket.emit('order:undo', { id: order.id });
+      });
+    }
 
     ordersGrid.appendChild(card);
   }
@@ -160,6 +181,13 @@ function updateTimers() {
     card.querySelector('.order-timer').textContent =
       t(isReady ? 'readySince' : 'since', { time: formatDuration(seconds) });
 
+    // العد التنازلي للمهلة
+    if (order.pending) {
+      const left = Math.max(1, Math.ceil((order.pending.until - now) / 1000));
+      card.querySelector('.pending-text').textContent =
+        t(order.pending.type === 'ready' ? 'pendingReady' : 'pendingClose', { seconds: left });
+    }
+
     // تلوين لو طال الانتظار (أكثر من 10 دقايق)
     card.classList.toggle('is-late', seconds >= 600);
   }
@@ -173,7 +201,7 @@ function formatDuration(totalSeconds) {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
-setInterval(updateTimers, 1000);
+setInterval(updateTimers, 250); // كل ربع ثانية عشان العد التنازلي يكون دقيق
 
 // =============================================================
 //  رمز الدخول (PIN)
