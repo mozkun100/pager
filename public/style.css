@@ -723,3 +723,26 @@ body.games-open { overflow: hidden; }
 /* الألعاب المستقلة (مثل كاسر الألوان) تنفتح داخل إطار يملأ مساحة اللعب */
 .game-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
 .games-play.embedded .game-meta { display: none; }
+
+/* =============================================================
+   تحسينات اللمس في الألعاب (للجوالات الحقيقية)
+   ============================================================= */
+/* 1) الضغط السريع ما يكبّر الصفحة، و 3) الضغط المطوّل ما يحدد نص ولا يفتح قائمة */
+.games-overlay,
+.games-overlay button,
+.games-overlay .game-stage {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.game-canvas, .game-frame { touch-action: none; }
+
+/* 2) السحب لتحت ما يحدّث الصفحة (Android) وما يحرّك الصفحة اللي ورا */
+html:has(body.games-open), body.games-open { overscroll-behavior: none; overflow: hidden; }
+.games-overlay { overscroll-behavior: contain; }
+.games-overlay .game-stage { overscroll-behavior: none; }
+
+/* 4) قلب بطاقات الذاكرة على الجوالات الأقدم */
+.mem-card span { -webkit-backface-visibility: hidden; }

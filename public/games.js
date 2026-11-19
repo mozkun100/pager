@@ -228,6 +228,10 @@ const Games = (() => {
   overlay.querySelectorAll('.games-close').forEach((b) => b.addEventListener('click', close));
   $('.games-back').addEventListener('click', showMenu);
 
+  // السحب داخل منطقة اللعب ما يحرّك/يحدّث الصفحة (مهم في أندرويد: السحب لتحت يحدّث الصفحة
+  // ويطلّع العميل من طلبه). القائمة نفسها نخليها تنسحب عادي عشان يقدر يتصفح الألعاب.
+  stage.addEventListener('touchmove', (e) => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+
   document.addEventListener('visibilitychange', () => {
     current?.inst?.pause?.(document.hidden);
   });
