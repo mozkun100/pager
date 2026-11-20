@@ -748,6 +748,10 @@ const Games = (() => {
       host.append(frame);
       frame.addEventListener('load', () => { try { frame.contentWindow.focus(); } catch {} });
       return {
+        // نوقف كاسر الألوان مؤقتاً بنفس زر الإيقاف حقه (حرف P)
+        freeze() {
+          try { frame.contentWindow.dispatchEvent(new KeyboardEvent('keydown', { key: 'p' })); } catch {}
+        },
         destroy() {
           frame.src = 'about:blank'; // يوقف الصوت والحركة فوراً
           frame.remove();
@@ -840,5 +844,11 @@ const Games = (() => {
     },
   });
 
-  return { open, close, isOpen: () => !overlay.hidden };
+  // لما يجهز الطلب: نوقف اللعبة مؤقتاً (بدل ما نقفلها فجأة) وتطلع فوقها بطاقة "طلبك جاهز"
+  function freeze() {
+    if (!current) return;
+    current.inst?.freeze ? current.inst.freeze() : current.inst?.pause?.(true);
+  }
+
+  return { open, close, freeze, isOpen: () => !overlay.hidden };
 })();

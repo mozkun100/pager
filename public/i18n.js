@@ -86,6 +86,7 @@ const TEXTS = {
     errWrongNumber: 'الرقم غير صحيح',
     confirmReceived: 'متأكد إنك استلمت طلبك؟',
     titleReady: '🔔 طلبك جاهز!',
+    readyTitle: 'طلبك جاهز!', readyBody: 'تفضّل استلمه من الكاشير', readyOk: 'تمام، جاي ✅',
 
     // ألعاب الانتظار
     playWhileWaiting: '🎮 العب وأنت تنتظر',
@@ -196,6 +197,7 @@ const TEXTS = {
     errWrongNumber: 'Invalid order number',
     confirmReceived: 'Did you pick up your order?',
     titleReady: '🔔 Your order is ready!',
+    readyTitle: 'Your order is ready!', readyBody: 'Please pick it up at the counter', readyOk: 'OK, on my way ✅',
 
     playWhileWaiting: '🎮 Play while you wait',
     gamesTitle: 'Play while you wait',

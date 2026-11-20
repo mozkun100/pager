@@ -766,3 +766,44 @@ html:has(body.games-open), body.games-open { overscroll-behavior: none; overflow
 .mj-levels p { margin: 0 0 6px; font-size: .85rem; color: var(--muted); line-height: 1.5; }
 .mj-level { display: flex; justify-content: space-between; align-items: center; }
 .mj-level small { font-weight: 500; opacity: .8; }
+
+/* =============================================================
+   بطاقة "طلبك جاهز" — تطلع بهدوء فوق الصفحة (وفوق اللعبة)
+   ============================================================= */
+.ready-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 20px max(16px, env(safe-area-inset-right, 0px)) 20px max(16px, env(safe-area-inset-left, 0px));
+  background: rgba(0, 0, 0, .45);
+  animation: ready-fade .35s ease-out;
+}
+.ready-modal[hidden] { display: none; }
+.ready-box {
+  width: min(360px, 100%);
+  background: var(--card);
+  color: var(--text);
+  border-radius: 20px;
+  padding: 26px 20px 20px;
+  display: grid;
+  gap: 10px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+  animation: ready-up .45s cubic-bezier(.2, .9, .3, 1.2);
+}
+.ready-emoji { font-size: 3rem; line-height: 1; }
+.ready-box h2 { margin: 0; font-size: 1.9rem; }
+.ready-num { font-size: 4rem; font-weight: 800; line-height: 1; }
+.ready-box p { margin: 0 0 6px; color: var(--muted); }
+.ready-received { background: #e9edf2; color: var(--text); }
+@keyframes ready-fade { from { opacity: 0; } }
+@keyframes ready-up { from { opacity: 0; transform: translateY(40px) scale(.96); } }
+@media (prefers-reduced-motion: reduce) { .ready-modal, .ready-box { animation: none; } }
+/* المرحلة 2: الوميض يكون حول البطاقة نفسها (عشان يبان حتى لو اللعبة مغطية الصفحة) */
+body.alerting .ready-modal { animation: ready-flash 1s steps(1, end) infinite; }
+@keyframes ready-flash {
+  0%  { background: rgba(31, 157, 85, .9); }
+  50% { background: rgba(0, 0, 0, .55); }
+}

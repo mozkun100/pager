@@ -139,8 +139,8 @@ function applyOrder(order, serverNow) {
   clockOffset = serverNow - Date.now();
   currentOrder = order;
 
-  // الألعاب بس وقت الانتظار: أول ما يجهز (أو ينقفل) الطلب نقفلها فوراً
-  if (order.status !== 'preparing') Games.close();
+  // الألعاب: لما ينقفل الطلب نقفلها. ولما يجهز، syncAlarm يوقفها بهدوء ويطلّع بطاقة "طلبك جاهز"
+  if (order.status === 'done') Games.close();
   updatePlayBtn();
 
   if (order.status === 'done') {
@@ -202,16 +202,21 @@ function syncAlarm() {
     store.get('stopped') !== currentOrder.id;
 
   if (shouldRing && !Alarm.isRinging()) {
-    Alarm.start();
-    document.body.classList.add('alerting'); // الوميض
+    // المرحلة 1 (هادية): اللعبة توقف، وتطلع بطاقة "طلبك جاهز" مع نغمة ناعمة
+    Games.freeze();
+    showReadyCard();
     stopAlarmBtn.classList.remove('hidden');
-    // عنوان التبويب يومض بعد (يفيد لو الصفحة في تبويب ثاني)
     let on = false;
-    titleTimer = setInterval(() => {
+    titleTimer = setInterval(() => {   // عنوان التبويب يومض (يفيد لو الصفحة في تبويب ثاني)
       document.title = (on = !on) ? t('titleReady') : t('appName');
     }, 1000);
+    // المرحلة 2 (لو ما تفاعل خلال 5 ثواني): الرنين الكامل + الوميض
+    Alarm.start({ onEscalate: () => document.body.classList.add('alerting') });
   } else if (!shouldRing) {
+    const wasRinging = Alarm.isRinging();
     Alarm.stop();
+    hideReadyCard();
+    if (wasRinging) Games.close(); // العميل رايح يستلم، نقفل اللعبة اللي كانت موقّفة
     document.body.classList.remove('alerting');
     stopAlarmBtn.classList.add('hidden');
     clearInterval(titleTimer);
@@ -220,11 +225,31 @@ function syncAlarm() {
 }
 
 // "إيقاف التنبيه" — في هذا الجوال فقط، والطلب يبقى مفتوح
-stopAlarmBtn.addEventListener('click', () => {
+function stopAlarm() {
   if (!currentOrder) return;
   store.set('stopped', currentOrder.id);
   syncAlarm();
-});
+}
+stopAlarmBtn.addEventListener('click', stopAlarm);
+
+// بطاقة "طلبك جاهز"
+const readyCard = $('readyCard');
+function showReadyCard() {
+  $('readyNum').textContent = currentOrder ? currentOrder.number : '';
+  readyCard.hidden = false;
+}
+function hideReadyCard() {
+  readyCard.hidden = true;
+}
+$('readyOkBtn').addEventListener('click', stopAlarm);               // "تمام، جاي" = يوقف التنبيه
+$('readyReceivedBtn').addEventListener('click', () => receivedBtn.click()); // نفس زر "تم الاستلام"
+
+// بعد تحديث الصفحة: أي لمسة على الشاشة تفتح الصوت (المتصفح يحتاج لمسة من العميل)
+document.addEventListener('pointerdown', () => {
+  if (Alarm.isUnlocked()) return;
+  Alarm.unlock();
+  reactivateBtn.classList.add('hidden');
+}, true);
 
 // =============================================================
 //  4) تم الاستلام

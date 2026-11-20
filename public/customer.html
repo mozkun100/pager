@@ -72,6 +72,18 @@
     </section>
   </main>
 
+  <!-- ===== بطاقة "طلبك جاهز" (تطلع فوق كل شي، حتى فوق اللعبة) ===== -->
+  <div id="readyCard" class="ready-modal" hidden>
+    <div class="ready-box" role="alertdialog" aria-labelledby="readyTitle">
+      <div class="ready-emoji">🎉</div>
+      <h2 id="readyTitle" data-i18n="readyTitle">طلبك جاهز!</h2>
+      <div id="readyNum" class="ready-num"></div>
+      <p data-i18n="readyBody">تفضّل استلمه من الكاشير</p>
+      <button id="readyOkBtn" class="btn btn-big ready-ok" data-i18n="readyOk">تمام، جاي ✅</button>
+      <button id="readyReceivedBtn" class="btn ready-received" data-i18n="btnReceived">تم الاستلام</button>
+    </div>
+  </div>
+
   <!-- ===== ألعاب الانتظار (شاشة كاملة فوق الصفحة) ===== -->
   <div id="gamesOverlay" class="games-overlay" hidden>
     <div class="games-menu">

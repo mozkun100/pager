@@ -16,8 +16,17 @@ const Alarm = (() => {
   let vibrateTimer = null; // مؤقت تكرار الاهتزاز
   let wakeLock = null;
   let ringing = false;
+  let master = null;       // التحكم بالصوت العام (عشان نرفعه بالتدريج)
+  let gentleTimer = null;  // نغمة المرحلة الهادية
+  let escalateTimer = null;
 
   const PATTERN_MS = 1400; // طول الدورة الوحدة (3 بيبات + سكتة)
+
+  // التنبيه المتدرّج (عشان ما يخرّع العميل):
+  //  المرحلة 1: نغمة هادية "دينغ-دونغ" تعلى بالتدريج + اهتزازة وحدة، بدون وميض
+  //  المرحلة 2 (لو ما تفاعل): الرنين الكامل المتكرر، والصوت بعد يعلى بالتدريج
+  const GENTLE_MS = 5000;  // مدة المرحلة الهادية
+  const RAMP_SEC = 3;      // مدة ارتفاع صوت الرنين الكامل
 
   // يُستدعى من داخل ضغطة زر — يفك قفل الصوت في المتصفح
   function unlock() {
@@ -26,7 +35,11 @@ const Alarm = (() => {
 
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return false;
-    if (!ctx) ctx = new AC();
+    if (!ctx) {
+      ctx = new AC();
+      master = ctx.createGain();
+      master.connect(ctx.destination);
+    }
     if (ctx.state === 'suspended') ctx.resume();
 
     // صوت صامت قصير — بعض المتصفحات (خصوصاً آيفون) تحتاجه عشان "تفتح" الصوت
@@ -43,17 +56,17 @@ const Alarm = (() => {
   }
 
   // بيبة وحدة
-  function beep(startAt, freq, duration, volume = 0.35) {
+  function beep(startAt, freq, duration, volume = 0.35, type = 'square') {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.type = 'square';
+    osc.type = type;
     osc.frequency.value = freq;
     // نرفع وننزل الصوت بنعومة عشان ما يطلع "طقّة"
     gain.gain.setValueAtTime(0, startAt);
     gain.gain.linearRampToValueAtTime(volume, startAt + 0.01);
     gain.gain.setValueAtTime(volume, startAt + duration - 0.02);
     gain.gain.linearRampToValueAtTime(0, startAt + duration);
-    osc.connect(gain).connect(ctx.destination);
+    osc.connect(gain).connect(master);
     osc.start(startAt);
     osc.stop(startAt + duration + 0.02);
   }
@@ -76,26 +89,59 @@ const Alarm = (() => {
     beep(t + 0.14, 1760, 0.14, 0.2);
   }
 
-  function start() {
+  // نغمة المرحلة الهادية: "دينغ-دونغ" ناعمة
+  function softChime() {
+    if (!ctx) return;
+    if (ctx.state === 'suspended') ctx.resume();
+    const t = ctx.currentTime + 0.05;
+    beep(t, 880, 0.45, 0.3, 'sine');
+    beep(t + 0.45, 660, 0.6, 0.3, 'sine');
+  }
+
+  // نغيّر مستوى الصوت العام بالتدريج
+  function rampVolume(from, to, sec) {
+    if (!ctx || !master) return;
+    const t = ctx.currentTime;
+    master.gain.cancelScheduledValues(t);
+    master.gain.setValueAtTime(from, t);
+    master.gain.linearRampToValueAtTime(to, t + sec);
+  }
+
+  // onEscalate: يُستدعى لما نبدأ المرحلة الثانية (عشان الصفحة تشغّل الوميض)
+  function start({ onEscalate } = {}) {
     if (ringing) return;
     ringing = true;
 
-    playPattern();
-    loopTimer = setInterval(playPattern, PATTERN_MS);
+    // المرحلة 1: هادية
+    rampVolume(0.2, 0.8, GENTLE_MS / 1000);
+    softChime();
+    gentleTimer = setInterval(softChime, 2500);
+    if ('vibrate' in navigator) navigator.vibrate(250);
 
-    if ('vibrate' in navigator) {
-      const vib = () => navigator.vibrate([400, 200, 400, 200, 400]);
-      vib();
-      vibrateTimer = setInterval(vib, PATTERN_MS + 600);
-    }
+    // المرحلة 2: الرنين الكامل
+    escalateTimer = setTimeout(() => {
+      clearInterval(gentleTimer);
+      rampVolume(0.35, 1, RAMP_SEC);
+      playPattern();
+      loopTimer = setInterval(playPattern, PATTERN_MS);
+      if ('vibrate' in navigator) {
+        const vib = () => navigator.vibrate([400, 200, 400, 200, 400]);
+        vib();
+        vibrateTimer = setInterval(vib, PATTERN_MS + 600);
+      }
+      onEscalate?.();
+    }, GENTLE_MS);
   }
 
   function stop() {
     ringing = false;
     clearInterval(loopTimer);
     clearInterval(vibrateTimer);
-    loopTimer = vibrateTimer = null;
+    clearInterval(gentleTimer);
+    clearTimeout(escalateTimer);
+    loopTimer = vibrateTimer = gentleTimer = escalateTimer = null;
     if ('vibrate' in navigator) navigator.vibrate(0);
+    if (ctx && master) { master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(1, ctx.currentTime); }
   }
 
   function isRinging() {

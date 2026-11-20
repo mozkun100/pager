@@ -317,3 +317,20 @@ body.qr-page { background: var(--paper-2); }
 .mj-levels h3 { font-family: var(--font-display); font-weight: 900; }
 .mj-levels p { color: var(--ink-muted); }
 .mj-tile { border-radius: 5px; }
+
+/* بطاقة "طلبك جاهز" = تذكرة صفراء */
+.ready-box { background: var(--signal); color: var(--ink); border-radius: 8px; }
+.ready-box h2 { font-family: var(--font-display); font-weight: 900; }
+.ready-num { font-family: var(--font-display); font-weight: 900; font-size: 5.5rem; letter-spacing: -.04em; }
+.ready-box p { color: #5b4e00; }
+.ready-ok { background: var(--ink); color: var(--signal); }
+.ready-ok:hover:not(:disabled) { background: #000; }
+.ready-received { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
+.ready-received:hover:not(:disabled) { background: rgba(0, 0, 0, .08); }
+/* الوميض حول البطاقة: أصفر وأسود */
+body.alerting .ready-modal { animation: ticket-modal-flash 1s steps(1, end) infinite; }
+@keyframes ticket-modal-flash {
+  0%  { background: rgba(255, 210, 31, .92); }
+  50% { background: rgba(20, 20, 20, .92); }
+}
+body.alerting .ready-box { box-shadow: 0 0 0 4px var(--ink), 0 20px 60px rgba(0, 0, 0, .4); }
