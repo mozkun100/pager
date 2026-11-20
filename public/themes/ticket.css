@@ -314,3 +314,6 @@ body.qr-page { background: var(--paper-2); }
 .btn-play:hover:not(:disabled) { background: var(--signal); }
 .cashier .toggle { color: var(--ink); }
 .toggle input { accent-color: var(--ink); }
+.mj-levels h3 { font-family: var(--font-display); font-weight: 900; }
+.mj-levels p { color: var(--ink-muted); }
+.mj-tile { border-radius: 5px; }

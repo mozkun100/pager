@@ -651,7 +651,7 @@ body.games-open { overflow: hidden; }
 .result-card p { margin: 0; font-size: 1.1rem; font-weight: 700; }
 .result-card .new-best { color: var(--g-accent); }
 
-/* شبكة المربعات (ذاكرة / رتّب / تسلسل) */
+/* شبكة المربعات (رتّب / تسلسل) */
 .tile-grid {
   display: grid;
   gap: 8px;
@@ -661,32 +661,6 @@ body.games-open { overflow: hidden; }
 }
 .tile-grid.g3 { grid-template-columns: repeat(3, 1fr); }
 .tile-grid.g4 { grid-template-columns: repeat(4, 1fr); }
-
-.mem-card {
-  position: relative;
-  border: 0;
-  padding: 0;
-  border-radius: 10px;
-  background: transparent;
-  cursor: pointer;
-  perspective: 600px;
-}
-.mem-card span {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  border-radius: 10px;
-  backface-visibility: hidden;
-  transition: transform .3s;
-  font-size: 1.8rem;
-}
-.mem-card .back { background: var(--g-fg); }
-.mem-card .back::after { content: "?"; color: var(--g-bg); font-weight: 800; font-size: 1.4rem; }
-.mem-card .front { background: #fff; transform: rotateY(180deg); box-shadow: inset 0 0 0 2px var(--g-fg); }
-.mem-card.open .back { transform: rotateY(180deg); }
-.mem-card.open .front { transform: rotateY(0); }
-.mem-card.done .front { background: var(--g-accent); }
 
 .slide-tile {
   border: 0;
@@ -744,5 +718,51 @@ html:has(body.games-open), body.games-open { overscroll-behavior: none; overflow
 .games-overlay { overscroll-behavior: contain; }
 .games-overlay .game-stage { overscroll-behavior: none; }
 
-/* 4) قلب بطاقات الذاكرة على الجوالات الأقدم */
-.mem-card span { -webkit-backface-visibility: hidden; }
+
+/* =============================================================
+   ماجونغ
+   ============================================================= */
+.mj { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 6px; padding: 8px; color: var(--g-fg); }
+.mj-bar { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.mj-bar button {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: .85rem;
+  font-weight: 700;
+  background: var(--g-fg);
+  color: var(--g-bg);
+  cursor: pointer;
+}
+.mj-bar button:disabled { opacity: .35; cursor: default; }
+.mj-note { text-align: center; font-weight: 700; font-size: .9rem; color: var(--g-hot); min-height: 1.3em; }
+.mj-wrap { flex: 1; min-height: 0; position: relative; display: grid; place-items: center; }
+.mj-board { position: relative; }
+.mj-tile {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: #fffdf4;
+  line-height: 1;
+  cursor: pointer;
+  /* إطار + سماكة البلاطة (ظل تحت ويمين) */
+  box-shadow: inset 0 0 0 1.5px var(--g-fg), 2px 3px 0 var(--g-muted), 3px 4px 0 var(--g-fg);
+  transition: transform .12s, opacity .25s, background .12s;
+}
+.mj-tile.blocked { filter: brightness(.8) saturate(.6); }
+.mj-tile.sel { background: var(--g-accent); transform: translate(-2px, -3px); }
+.mj-tile.gone { opacity: 0; transform: scale(.5); pointer-events: none; }
+.mj-tile.hint { animation: mj-hint .45s ease-in-out 4; }
+.mj-tile.shake { animation: mj-shake .3s; }
+@keyframes mj-hint { 50% { background: var(--g-accent); transform: translateY(-4px); } }
+@keyframes mj-shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+.mj-levels { margin: auto; display: grid; gap: 10px; width: min(300px, 100%); text-align: center; }
+.mj-levels h3 { margin: 0; font-size: 1.4rem; }
+.mj-levels p { margin: 0 0 6px; font-size: .85rem; color: var(--muted); line-height: 1.5; }
+.mj-level { display: flex; justify-content: space-between; align-items: center; }
+.mj-level small { font-weight: 500; opacity: .8; }

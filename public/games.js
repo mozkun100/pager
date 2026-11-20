@@ -1,7 +1,7 @@
 // =============================================================
 //  ألعاب الانتظار
 //  6 ألعاب خفيفة بدون صوت، في 3 فئات:
-//   😌 رايقة: فقاعات، ذاكرة      🧠 ذكاء: رتّب الأرقام، تسلسل
+//   😌 رايقة: فقاعات، ماجونغ      🧠 ذكاء: رتّب الأرقام، تسلسل
 //   ⚡ سريعة: كاسر الألوان، كدّس
 //
 //  - تنفتح فوق صفحة العميل وهو ينتظر
@@ -98,13 +98,15 @@ const Games = (() => {
       saveBest(value) {
         if (value > 0 && isBetter(def, value, bestStore.get(def.id))) bestStore.set(def.id, value);
       },
-      end(score, { won = false, labelKey = 'score' } = {}) {
-        const best = bestStore.get(def.id);
+      // bestKey: مفتاح أفضل نتيجة (مثلاً لكل مستوى) — display: طريقة عرض النتيجة — save: نحفظها ولا لا
+      end(score, { won = false, labelKey = 'score', bestKey = def.id, display = score, save = true } = {}) {
+        const best = bestStore.get(bestKey);
         // صفر في لعبة "الأعلى أفضل" ما يعتبر رقم قياسي
-        const newBest = (def.lowerIsBetter || score > 0) && isBetter(def, score, best);
-        if (newBest) bestStore.set(def.id, score);
-        showResult(def, score, labelKey, won, newBest);
+        const newBest = save && (def.lowerIsBetter || score > 0) && isBetter(def, score, best);
+        if (newBest) bestStore.set(bestKey, score);
+        showResult(def, display, labelKey, won, newBest);
       },
+      bestOf(key) { return bestStore.get(key); },
       get lastScore() { return lastScore; },
     };
   }
@@ -331,49 +333,264 @@ const Games = (() => {
   });
 
   // =============================================================
-  //  😌 2) ذاكرة — طابق الأزواج بأقل عدد حركات
+  //  😌 2) ماجونغ — طابق البلاطات "الحرة" وفضّي اللوحة
+  //  البلاطة الحرة: ما فوقها شي، وجنبها اليمين أو اليسار فاضي
   // =============================================================
+
+  // ====== رموز البلاطات — غيّرها هنا ======
+  // كل رمز يتكرر 4 مرات. المستوى الصعب يحتاج 15 رمز.
+  // تقدر تبدّلها برموز ثانية (أو حروف/أرقام) وباقي اللعبة ما يتأثر.
+  const MAHJONG_TILES = ['☕', '🍩', '🧁', '🍪', '🥐', '🍫', '🍓', '🍋', '🍰', '🥤', '🧇', '🍦', '🥯', '🍵', '🍒'];
+
+  // ====== المستويات — عدد التلميحات والخلط ======
+  const MJ_LEVELS = {
+    easy:   { name: 'levelEasy',   hints: Infinity, shuffles: Infinity },
+    medium: { name: 'levelMedium', hints: 3,        shuffles: 2 },
+    hard:   { name: 'levelHard',   hints: 1,        shuffles: 1 },
+  };
+
+  // أشكال اللوحات: كل بلاطة {x, y, z} بوحدات "نص بلاطة" (عشان الطبقات تقدر تجي فوق النص)
+  const mjGrid = (cols, rows, x0, y0, z) => {
+    const out = [];
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) out.push({ x: x0 + c * 2, y: y0 + r * 2, z });
+    return out;
+  };
+  const MJ_LAYOUTS = {
+    easy:   () => [...mjGrid(4, 5, 0, 0, 0), ...mjGrid(2, 2, 2, 3, 1)],                          // 24 بلاطة
+    medium: () => [...mjGrid(6, 5, 0, 0, 0), ...mjGrid(4, 2, 2, 3, 1), ...mjGrid(2, 1, 4, 4, 2)], // 40 بلاطة
+    // الصعب بالطول عشان يناسب شاشة الجوال (بلاطات أكبر)
+    hard:   () => [...mjGrid(5, 8, 0, 0, 0), ...mjGrid(4, 4, 1, 3, 1), ...mjGrid(2, 2, 3, 5, 2)], // 60 بلاطة
+  };
+
+  // هل البلاطة حرة؟
+  function mjFree(t, tiles) {
+    let left = false, right = false;
+    for (const o of tiles) {
+      if (o === t || o.gone) continue;
+      if (o.z > t.z && Math.abs(o.x - t.x) < 2 && Math.abs(o.y - t.y) < 2) return false; // فيه شي فوقها
+      if (o.z === t.z && Math.abs(o.y - t.y) < 2) {
+        if (o.x === t.x - 2) left = true;
+        if (o.x === t.x + 2) right = true;
+      }
+    }
+    return !(left && right);
+  }
+
+  // توزيع الرموز بحيث تكون اللوحة قابلة للحل دائماً:
+  // نحاكي اللعب — كل مرة نختار بلاطتين حرتين ونعطيهم نفس الرمز ونشيلهم.
+  // بما إننا قدرنا نفضّي اللوحة بهالترتيب، اللاعب بعد يقدر.
+  function mjDeal(tiles, pairs) {
+    for (let attempt = 0; attempt < 300; attempt++) {
+      const order = pairs.slice().sort(() => Math.random() - 0.5);
+      tiles.forEach((p) => { p.gone = false; });
+      let ok = true;
+      for (const sym of order) {
+        const free = tiles.filter((p) => !p.gone && mjFree(p, tiles));
+        if (free.length < 2) { ok = false; break; }
+        const a = free.splice(Math.floor(Math.random() * free.length), 1)[0];
+        const b = free[Math.floor(Math.random() * free.length)];
+        a.s = sym; b.s = sym; a.gone = true; b.gone = true;
+      }
+      tiles.forEach((p) => { p.gone = false; });
+      if (ok) return true;
+    }
+    return false;
+  }
+
+  const mjTime = (sec) => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+
   games.push({
-    id: 'memory', cat: 'relax', icon: '🃏', name: 'gMemory', desc: 'gMemoryDesc', lowerIsBetter: true,
+    id: 'mahjong', cat: 'relax', icon: '🀄', name: 'gMahjong', desc: 'gMahjongDesc', lowerIsBetter: true,
+    readBest: () => null, // أفضل وقت يختلف حسب المستوى، فنعرضه داخل اللعبة
     mount(host, api) {
-      const faces = ['☕', '🍩', '🧁', '🍪', '🥐', '🍫', '🍓', '🍋'];
-      const deck = [...faces, ...faces].sort(() => Math.random() - 0.5);
-      let first = null, lock = false, moves = 0, matched = 0;
+      const root = document.createElement('div');
+      root.className = 'mj';
+      host.append(root);
       const timers = [];
-      api.setScore(0, 'moves');
+      let level, tiles, selected, left, hints, shuffles, startedAt, over;
 
-      const grid = document.createElement('div');
-      grid.className = 'tile-grid g4';
-      deck.forEach((face) => {
-        const card = document.createElement('button');
-        card.className = 'mem-card';
-        card.innerHTML = '<span class="back"></span><span class="front"></span>';
-        card.querySelector('.front').textContent = face;
-        card.addEventListener('click', () => flip(card, face));
-        grid.append(card);
-      });
-      host.append(grid);
+      // ---------- اختيار المستوى ----------
+      function showLevels() {
+        root.innerHTML = '';
+        api.setScore('—', 'tilesLeft');
+        const box = document.createElement('div');
+        box.className = 'mj-levels';
+        const h = document.createElement('h3');
+        h.textContent = t('chooseLevel');
+        const how = document.createElement('p');
+        how.textContent = t('mjHowTo');
+        box.append(h, how);
+        for (const id of Object.keys(MJ_LEVELS)) {
+          const btn = document.createElement('button');
+          btn.className = 'btn mj-level';
+          const best = api.bestOf('mahjong-' + id);
+          btn.innerHTML = '<b></b><small></small>';
+          btn.querySelector('b').textContent = t(MJ_LEVELS[id].name);
+          btn.querySelector('small').textContent = best == null ? '' : `${t('best')}: ${mjTime(best)}`;
+          btn.addEventListener('click', () => startLevel(id));
+          box.append(btn);
+        }
+        root.append(box);
+      }
 
-      function flip(card, face) {
-        if (lock || card.classList.contains('open')) return;
-        card.classList.add('open');
-        if (!first) { first = { card, face }; return; }
-        moves++;
-        api.setScore(moves, 'moves');
-        if (first.face === face) {
-          first.card.classList.add('done');
-          card.classList.add('done');
-          first = null;
-          if (++matched === faces.length) {
-            timers.push(setTimeout(() => api.end(moves, { won: true, labelKey: 'moves' }), 500));
+      // ---------- بدء مستوى ----------
+      function startLevel(id) {
+        level = id;
+        const cfg = MJ_LEVELS[id];
+        tiles = MJ_LAYOUTS[id]().map((p, i) => ({ ...p, i, gone: false }));
+        const pairs = [];
+        for (let k = 0; k < tiles.length / 2; k++) pairs.push(MAHJONG_TILES[Math.floor(k / 2) % MAHJONG_TILES.length]);
+        mjDeal(tiles, pairs);
+        selected = null; left = tiles.length; hints = cfg.hints; shuffles = cfg.shuffles;
+        startedAt = 0; over = false;
+        build();
+      }
+
+      let boardEl, hintBtn, shuffleBtn, noteEl;
+      function build() {
+        root.innerHTML = '';
+        const bar = document.createElement('div');
+        bar.className = 'mj-bar';
+        hintBtn = document.createElement('button');
+        shuffleBtn = document.createElement('button');
+        const levelsBtn = document.createElement('button');
+        levelsBtn.textContent = '↺ ' + t('levels');
+        hintBtn.addEventListener('click', hint);
+        shuffleBtn.addEventListener('click', shuffle);
+        levelsBtn.addEventListener('click', showLevels);
+        bar.append(hintBtn, shuffleBtn, levelsBtn);
+        noteEl = document.createElement('div');
+        noteEl.className = 'mj-note';
+        const wrap = document.createElement('div');
+        wrap.className = 'mj-wrap';
+        boardEl = document.createElement('div');
+        boardEl.className = 'mj-board';
+        wrap.append(boardEl);
+        root.append(bar, noteEl, wrap);
+
+        // حجم البلاطة حسب المساحة
+        const xs = tiles.map((p) => p.x), ys = tiles.map((p) => p.y);
+        const minX = Math.min(...xs), minY = Math.min(...ys);
+        const spanX = Math.max(...xs) + 2 - minX, spanY = Math.max(...ys) + 2 - minY;
+        const maxZ = Math.max(...tiles.map((p) => p.z));
+        const RATIO = 1.28, DEPTH = 0.12; // طول البلاطة/عرضها، وإزاحة كل طبقة
+        const W = wrap.clientWidth - 8, H = wrap.clientHeight - 8;
+        const tw = Math.min(64, W / (spanX / 2 + maxZ * DEPTH), H / (spanY / 2 * RATIO + maxZ * DEPTH));
+        const th = tw * RATIO, d = tw * DEPTH;
+        boardEl.style.width = (spanX / 2 * tw + maxZ * d) + 'px';
+        boardEl.style.height = (spanY / 2 * th + maxZ * d) + 'px';
+
+        for (const p of tiles) {
+          const el = document.createElement('button');
+          el.className = 'mj-tile';
+          el.style.left = ((p.x - minX) / 2 * tw + (maxZ - p.z) * d) + 'px';
+          el.style.top = ((p.y - minY) / 2 * th + (maxZ - p.z) * d) + 'px';
+          el.style.width = (tw - 2) + 'px';
+          el.style.height = (th - 2) + 'px';
+          el.style.fontSize = (tw * 0.56) + 'px';
+          el.style.zIndex = p.z * 1000 + p.y * 20 + p.x + 50;
+          el.addEventListener('click', () => tap(p));
+          p.el = el;
+          boardEl.append(el);
+        }
+        refresh();
+      }
+
+      // ---------- تحديث الشكل ----------
+      const fmtCount = (n) => (n === Infinity ? '∞' : n);
+      function refresh() {
+        for (const p of tiles) {
+          if (p.gone) continue;
+          p.el.textContent = p.s;
+          p.el.classList.toggle('blocked', !mjFree(p, tiles));
+          p.el.classList.toggle('sel', p === selected);
+        }
+        hintBtn.textContent = `💡 ${t('hint')} (${fmtCount(hints)})`;
+        shuffleBtn.textContent = `🔀 ${t('shuffle')} (${fmtCount(shuffles)})`;
+        hintBtn.disabled = hints <= 0 || over;
+        shuffleBtn.disabled = shuffles <= 0 || over;
+        api.setScore(left, 'tilesLeft');
+      }
+
+      const freePairs = () => {
+        const free = tiles.filter((p) => !p.gone && mjFree(p, tiles));
+        for (let i = 0; i < free.length; i++)
+          for (let j = i + 1; j < free.length; j++)
+            if (free[i].s === free[j].s) return [free[i], free[j]];
+        return null;
+      };
+
+      function note(text) {
+        noteEl.textContent = text;
+      }
+
+      // ---------- اللعب ----------
+      function tap(p) {
+        if (over || p.gone) return;
+        if (!startedAt) startedAt = Date.now();
+        note('');
+        if (!mjFree(p, tiles)) {
+          p.el.classList.remove('shake'); void p.el.offsetWidth; p.el.classList.add('shake');
+          return;
+        }
+        if (selected === p) { selected = null; refresh(); return; }
+        if (selected && selected.s === p.s) {
+          for (const q of [selected, p]) { q.gone = true; q.el.classList.add('gone'); }
+          selected = null;
+          left -= 2;
+          refresh();
+          afterMove();
+          return;
+        }
+        selected = p;
+        refresh();
+      }
+
+      function afterMove() {
+        if (left === 0) {
+          over = true;
+          const sec = Math.round((Date.now() - startedAt) / 1000);
+          timers.push(setTimeout(() => api.end(sec, { won: true, labelKey: 'time', bestKey: 'mahjong-' + level, display: mjTime(sec) }), 400));
+          return;
+        }
+        if (!freePairs()) {
+          if (shuffles > 0) note(t('noMoves'));
+          else {
+            over = true;
+            refresh();
+            timers.push(setTimeout(() => api.end(left, { won: false, labelKey: 'tilesLeft', save: false }), 700));
           }
-        } else {
-          lock = true;
-          const a = first.card;
-          first = null;
-          timers.push(setTimeout(() => { a.classList.remove('open'); card.classList.remove('open'); lock = false; }, 700));
         }
       }
+
+      function hint() {
+        if (hints <= 0 || over) return;
+        const pair = freePairs();
+        if (!pair) { note(t('noMoves')); return; }
+        hints--;
+        for (const q of pair) {
+          q.el.classList.remove('hint'); void q.el.offsetWidth; q.el.classList.add('hint');
+        }
+        refresh();
+      }
+
+      // الخلط: نعيد توزيع رموز البلاطات الباقية بحيث تبقى قابلة للحل
+      function shuffle() {
+        if (shuffles <= 0 || over) return;
+        shuffles--;
+        const rest = tiles.filter((p) => !p.gone);
+        const counts = {};
+        rest.forEach((p) => { counts[p.s] = (counts[p.s] || 0) + 1; });
+        const pairs = [];
+        for (const [sym, n] of Object.entries(counts)) for (let k = 0; k < n / 2; k++) pairs.push(sym);
+        mjDeal(rest, pairs);
+        selected = null;
+        note('');
+        refresh();
+        afterMove();
+      }
+
+      showLevels();
       return { destroy() { timers.forEach(clearTimeout); } };
     },
   });
