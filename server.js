@@ -15,6 +15,7 @@ const express = require('express');
 const { Server } = require('socket.io');
 const QRCode = require('qrcode');
 const db = require('./db');
+const push = require('./push');
 
 const PORT = process.env.PORT || 3000;
 
@@ -34,6 +35,9 @@ app.get('/', (req, res) => {
 app.get('/cashier', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'cashier.html'));
 });
+
+// المفتاح العام للإشعارات (الجوال يحتاجه عشان يشترك)
+app.get('/api/push-key', (req, res) => res.json({ key: push.publicKey }));
 
 // "/qr" = صفحة طباعة الـ QR
 app.get('/qr', (req, res) => {
@@ -128,6 +132,7 @@ function commitReady(id) {
   if (order) {
     log(`order #${order.number} is READY`);
     notifyOrder(order);
+    push.notifyReady(order, log); // إشعار للجوالات حتى لو مقفلة
   }
   broadcastToCashiers();
 }
@@ -137,6 +142,7 @@ function commitClose(id) {
   if (order) {
     log(`order #${order.number} picked up (closed)`);
     notifyOrder(order);
+    db.deletePushSubsForOrder(order.id); // ما عاد نحتاج نرسل لهم شي
   }
   broadcastToCashiers();
 }
@@ -313,6 +319,17 @@ io.on('connection', (socket) => {
     if (!order) return reply?.({ ok: false, error: 'NOT_FOUND' });
     if (order.status !== 'done') joinOrderRoom(socket, order);
     reply?.({ ok: true, order, serverNow: Date.now() });
+  });
+
+  // العميل سمح بالإشعارات: نحفظ اشتراك جواله لطلبه (لطلبه هو بس)
+  socket.on('push:subscribe', ({ id, subscription, lang } = {}, reply) => {
+    const valid = subscription && typeof subscription.endpoint === 'string'
+      && /^https:\/\//.test(subscription.endpoint) && subscription.keys;
+    if (!valid || typeof id !== 'string' || !socket.rooms.has(orderRoom(id))) {
+      return reply?.({ ok: false });
+    }
+    db.savePushSub(id, subscription, lang);
+    reply?.({ ok: true });
   });
 
   // --- أوامر الطلبات ---

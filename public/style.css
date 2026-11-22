@@ -807,3 +807,6 @@ body.alerting .ready-modal { animation: ready-flash 1s steps(1, end) infinite; }
   0%  { background: rgba(31, 157, 85, .9); }
   50% { background: rgba(0, 0, 0, .55); }
 }
+
+/* جملة الإشعارات تحت الطلب: خضراء لما تكون الإشعارات شغالة */
+.keep-open.push-on { color: var(--ok); font-weight: 700; }

@@ -86,6 +86,9 @@ const TEXTS = {
     errWrongNumber: 'الرقم غير صحيح',
     confirmReceived: 'متأكد إنك استلمت طلبك؟',
     titleReady: '🔔 طلبك جاهز!',
+    pushOn: '🔔 بيوصلك إشعار حتى لو قفلت الجوال',
+    pushOff: '📱 الإشعارات مقفلة، خلّ الصفحة مفتوحة عشان يوصلك التنبيه',
+    pushIos: '📲 للآيفون: اضغط زر المشاركة ثم "إضافة إلى الشاشة الرئيسية"، وافتح المنبه من هناك عشان توصلك الإشعارات وجوالك مقفل',
     readyTitle: 'طلبك جاهز!', readyBody: 'تفضّل استلمه من الكاشير', readyOk: 'تمام، جاي ✅',
 
     // ألعاب الانتظار
@@ -197,6 +200,9 @@ const TEXTS = {
     errWrongNumber: 'Invalid order number',
     confirmReceived: 'Did you pick up your order?',
     titleReady: '🔔 Your order is ready!',
+    pushOn: '🔔 You will get a notification even if your phone is locked',
+    pushOff: '📱 Notifications are off. Keep this page open to get the alert',
+    pushIos: '📲 On iPhone: tap Share, then "Add to Home Screen", and open the Pager from there to get notifications while your phone is locked',
     readyTitle: 'Your order is ready!', readyBody: 'Please pick it up at the counter', readyOk: 'OK, on my way ✅',
 
     playWhileWaiting: '🎮 Play while you wait',

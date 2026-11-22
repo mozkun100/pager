@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#141414">
   <title data-i18n-title="appName">المنبه</title>
+  <!-- عشان العميل يقدر يضيف المنبه للشاشة الرئيسية (مطلوب للإشعارات في الآيفون) -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="المنبه">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alexandria:wght@700;900&family=Readex+Pro:wght@400;600;700&display=swap">
@@ -57,7 +63,7 @@
       <button id="stopAlarmBtn" class="btn btn-big btn-stop hidden" data-i18n="stopAlarm">🔕 إيقاف التنبيه</button>
 
       <button id="receivedBtn" class="btn btn-received" data-i18n="btnReceived">تم الاستلام</button>
-      <p class="keep-open" data-i18n="keepOpen">📱 خلّ الصفحة مفتوحة عشان يوصلك التنبيه</p>
+      <p id="orderHint" class="keep-open" data-i18n="keepOpen">📱 خلّ الصفحة مفتوحة عشان يوصلك التنبيه</p>
       <button id="changeNumberBtn" class="link-btn" data-i18n="changeNumber">رقم غلط؟ غيّر الرقم</button>
     </section>
 

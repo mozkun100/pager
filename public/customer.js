@@ -42,6 +42,70 @@ const store = {
 // store 'order'   = { id, number }  ← الطلب اللي نتابعه
 // store 'stopped' = id               ← طلب أوقف العميل تنبيهه (عشان ما يرجع يرن بعد التحديث)
 
+// =============================================================
+//  الإشعارات (توصل حتى لو الجوال مقفل)
+// =============================================================
+const PushClient = (() => {
+  const supported = 'serviceWorker' in navigator && 'PushManager' in window
+    && 'Notification' in window && window.isSecureContext;
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  let permissionAsk = null;
+
+  if (supported) navigator.serviceWorker.register('/sw.js').catch(() => {});
+
+  // لازم ينادى داخل ضغطة العميل (المتصفح ما يسمح يسأل بدونها)
+  function ask() {
+    if (supported && Notification.permission === 'default') permissionAsk = Notification.requestPermission();
+  }
+
+  const toBytes = (b64) => {
+    const pad = '='.repeat((4 - (b64.length % 4)) % 4);
+    const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+    return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+  };
+  const sameKey = (a, b) => a && a.length === b.length && a.every((v, i) => v === b[i]);
+
+  // نشترك ونربط الاشتراك بالطلب. يرجّع: on | denied | default | unsupported | ios | error
+  async function subscribe(orderId) {
+    if (!supported) return isIOS && !standalone ? 'ios' : 'unsupported';
+    if (permissionAsk) { await permissionAsk.catch(() => {}); permissionAsk = null; }
+    if (Notification.permission !== 'granted') return Notification.permission;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const { key } = await (await fetch('/api/push-key')).json();
+      const keyBytes = toBytes(key);
+      let sub = await reg.pushManager.getSubscription();
+      // لو تغيّرت مفاتيح السيرفر، نجدد الاشتراك
+      if (sub && !sameKey(sub.options.applicationServerKey && new Uint8Array(sub.options.applicationServerKey), keyBytes)) {
+        await sub.unsubscribe();
+        sub = null;
+      }
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes });
+      const res = await new Promise((done) =>
+        socket.emit('push:subscribe', { id: orderId, subscription: sub.toJSON(), lang: I18n.lang }, done));
+      return res && res.ok ? 'on' : 'error';
+    } catch {
+      return 'error';
+    }
+  }
+
+  return { supported, ask, subscribe };
+})();
+
+let pushState = 'unknown';
+const orderHint = $('orderHint');
+function updatePushHint() {
+  if (!orderHint) return;
+  const key = { on: 'pushOn', ios: 'pushIos', denied: 'pushOff' }[pushState] || 'keepOpen';
+  orderHint.textContent = t(key);
+  orderHint.classList.toggle('push-on', pushState === 'on');
+}
+function syncPush(orderId) {
+  PushClient.subscribe(orderId).then((state) => { pushState = state; updatePushHint(); });
+}
+
 // ---------- التنقل بين الشاشات ----------
 function showView(name) {
   if (name !== 'order') document.body.classList.remove('is-ready');
@@ -69,6 +133,7 @@ socket.on('connect', () => {
         reactivateBtn.classList.remove('hidden');
       }
       applyOrder(res.order, res.serverNow);
+      if (res.order.status !== 'done') syncPush(res.order.id);
     });
   }
 });
@@ -103,8 +168,9 @@ function activate() {
   if (!number) return showEntryError(t('errEmpty'));
   if (!socket.connected) return showEntryError(t('errOffline'));
 
-  // لازم يكون هنا مباشرة داخل الضغطة — هذا اللي يسمح بالصوت في المتصفح
+  // لازم يكون هنا مباشرة داخل الضغطة — هذا اللي يسمح بالصوت والإشعارات في المتصفح
   Alarm.unlock();
+  PushClient.ask();
 
   activateBtn.disabled = true;
   socket.emit('customer:join', { number }, (res) => {
@@ -116,6 +182,7 @@ function activate() {
     Alarm.testChime();     // رنة قصيرة عشان يتأكد إن الصوت شغال
     Alarm.keepScreenOn();  // منع انطفاء الشاشة (إذا مدعوم)
     applyOrder(res.order, res.serverNow);
+    syncPush(res.order.id); // الإشعارات
   });
 }
 
@@ -267,6 +334,7 @@ receivedBtn.addEventListener('click', () => {
 // لما تتغيّر اللغة نعيد كتابة النصوص المتغيّرة (الحالة، العداد، رسالة الشكر)
 document.addEventListener('langchange', () => {
   entryError.classList.add('hidden');
+  updatePushHint();
   if (currentOrder) applyOrder(currentOrder, Date.now() + clockOffset);
 });
 

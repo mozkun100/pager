@@ -30,6 +30,15 @@ db.exec(`
     value TEXT NOT NULL
   );
 
+  -- اشتراكات الإشعارات: كل جوال (عنوان إشعاراته) مربوط بطلب واحد
+  CREATE TABLE IF NOT EXISTS push_subs (
+    endpoint   TEXT PRIMARY KEY,     -- عنوان الإشعارات الخاص بالجوال
+    order_id   TEXT NOT NULL,        -- الرقم السري للطلب
+    sub_json   TEXT NOT NULL,        -- بيانات الاشتراك كاملة
+    lang       TEXT NOT NULL DEFAULT 'ar',
+    created_at INTEGER NOT NULL
+  );
+
   -- الأجهزة اللي دخلت لوحة الكاشير بالرمز (نحفظ بصمة "تذكرة الدخول" بس)
   CREATE TABLE IF NOT EXISTS cashier_sessions (
     token_hash TEXT PRIMARY KEY,
@@ -202,6 +211,31 @@ function resetPin() {
   deleteAllSessions();
 }
 
+// =============================================================
+//  اشتراكات الإشعارات
+// =============================================================
+
+// نحفظ اشتراك الجوال لطلب معيّن (لو نفس الجوال تابع طلب جديد، ينتقل للطلب الجديد)
+function savePushSub(orderId, sub, lang) {
+  db.prepare(`
+    INSERT INTO push_subs (endpoint, order_id, sub_json, lang, created_at) VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(endpoint) DO UPDATE SET order_id = excluded.order_id, sub_json = excluded.sub_json, lang = excluded.lang
+  `).run(sub.endpoint, orderId, JSON.stringify(sub), lang === 'en' ? 'en' : 'ar', Date.now());
+}
+
+function getPushSubs(orderId) {
+  return db.prepare('SELECT endpoint, sub_json, lang FROM push_subs WHERE order_id = ?').all(orderId)
+    .map((r) => ({ endpoint: r.endpoint, sub: JSON.parse(r.sub_json), lang: r.lang }));
+}
+
+function deletePushSub(endpoint) {
+  db.prepare('DELETE FROM push_subs WHERE endpoint = ?').run(endpoint);
+}
+
+function deletePushSubsForOrder(orderId) {
+  db.prepare('DELETE FROM push_subs WHERE order_id = ?').run(orderId);
+}
+
 // نحوّل صف قاعدة البيانات لكائن عادي بأسماء واضحة
 function toPlain(row) {
   return {
@@ -233,4 +267,8 @@ module.exports = {
   deleteSession,
   deleteAllSessions,
   resetPin,
+  savePushSub,
+  getPushSubs,
+  deletePushSub,
+  deletePushSubsForOrder,
 };

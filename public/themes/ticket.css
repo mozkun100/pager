@@ -334,3 +334,5 @@ body.alerting .ready-modal { animation: ticket-modal-flash 1s steps(1, end) infi
   50% { background: rgba(20, 20, 20, .92); }
 }
 body.alerting .ready-box { box-shadow: 0 0 0 4px var(--ink), 0 20px 60px rgba(0, 0, 0, .4); }
+.customer .keep-open.push-on { color: #6fe39d; }
+.customer.is-ready .keep-open.push-on { color: #1f5f36; }
