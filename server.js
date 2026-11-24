@@ -354,23 +354,14 @@ io.on('connection', (socket) => {
     reply?.({ ok });
   }));
 
-  // تم الاستلام
-  //  - الكاشير: بعد 5 ثواني إلا إذا تراجع
-  //  - العميل (لطلبه هو فقط): فوراً، لأنه أكّد بنفسه
-  socket.on('order:close', ({ id } = {}, reply) => {
+  // تم الاستلام (كاشير فقط) — بعد 5 ثواني إلا إذا تراجع.
+  // العميل ما يقدر يقفل الطلب: لو كان يقدر، أي أحد يكتب رقم غيره يقفل طلبه.
+  socket.on('order:close', cashierOnly(({ id }, reply) => {
     const order = typeof id === 'string' ? db.getOrderById(id) : null;
     if (!order || order.status === 'done') return reply?.({ ok: false });
-
-    if (socket.data.isCashier) {
-      const ok = schedule(id, 'close', () => commitClose(id));
-      return reply?.({ ok });
-    }
-
-    if (!socket.rooms.has(orderRoom(id))) return reply?.({ ok: false, error: 'UNAUTHORIZED' });
-    cancelPending(id); // لو الكاشير كان ضاغط شي على نفس الطلب، ما عاد له داعي
-    commitClose(id);
-    reply?.({ ok: true });
-  });
+    const ok = schedule(id, 'close', () => commitClose(id));
+    reply?.({ ok });
+  }));
 
   // تراجع (كاشير فقط)
   socket.on('order:undo', cashierOnly(({ id }, reply) => {

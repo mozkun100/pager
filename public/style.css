@@ -297,10 +297,6 @@ h1 { font-size: 1.6rem; margin: 0; }
   font-variant-numeric: tabular-nums;
 }
 
-.btn-received { background: #e9edf2; color: var(--text); }
-.btn-received:hover:not(:disabled) { background: #dce2e9; }
-.btn-received.btn-received-strong { background: var(--ok); color: #fff; }
-.btn-received.btn-received-strong:hover:not(:disabled) { background: #188247; }
 
 .btn-secondary { background: #e9edf2; color: var(--text); }
 .btn-secondary:hover:not(:disabled) { background: #dce2e9; }
@@ -367,7 +363,6 @@ body.alerting .order-panel {
 
 /* الأزرار تحت لوحة الطلب: مسافة بينها */
 #viewOrder .btn + .btn { margin-top: 0; }
-#receivedBtn { margin-top: 4px; }
 
 /* لو الجوال مضبوط على "تقليل الحركة" نخفف الوميض */
 @media (prefers-reduced-motion: reduce) {
@@ -380,7 +375,6 @@ body.customer { min-height: 100vh; min-height: 100dvh; }
 
 /* أثناء الوميض: زر "تم الاستلام" له إطار أبيض عشان يبان فوق الأخضر،
    والنصوص الصغيرة يتبدّل لونها مع الخلفية */
-body.alerting #receivedBtn { box-shadow: 0 0 0 3px #fff; }
 body.alerting .keep-open,
 body.alerting .link-btn { animation: flash-text 1s steps(1, end) infinite; }
 
@@ -797,7 +791,6 @@ html:has(body.games-open), body.games-open { overscroll-behavior: none; overflow
 .ready-box h2 { margin: 0; font-size: 1.9rem; }
 .ready-num { font-size: 4rem; font-weight: 800; line-height: 1; }
 .ready-box p { margin: 0 0 6px; color: var(--muted); }
-.ready-received { background: #e9edf2; color: var(--text); }
 @keyframes ready-fade { from { opacity: 0; } }
 @keyframes ready-up { from { opacity: 0; transform: translateY(40px) scale(.96); } }
 @media (prefers-reduced-motion: reduce) { .ready-modal, .ready-box { animation: none; } }

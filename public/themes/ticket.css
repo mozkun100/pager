@@ -229,10 +229,6 @@ body.customer { background: var(--ink); color: var(--paper); }
 .panel-timer { color: var(--ink-muted); }
 
 /* الأزرار تحت التذكرة */
-.btn-received { background: transparent; color: var(--paper); box-shadow: inset 0 0 0 2px #3a3a3a; }
-.btn-received:hover:not(:disabled) { background: #222; }
-.btn-received.btn-received-strong { background: var(--signal); color: var(--ink); box-shadow: none; }
-.btn-received.btn-received-strong:hover:not(:disabled) { background: #ffc800; }
 .btn-stop { background: var(--hot); color: #fff; }
 .btn-stop:hover:not(:disabled) { background: #c7351f; }
 .btn-reactivate { background: var(--signal); color: var(--ink); }
@@ -252,7 +248,6 @@ body.customer.is-ready { background: var(--signal); color: var(--ink); }
 .customer.is-ready .status { color: var(--ink); }
 .customer.is-ready .chip { background: var(--ink); color: var(--signal); border-color: var(--ink); }
 .customer.is-ready .keep-open, .customer.is-ready .link-btn { color: #5b4e00; }
-.customer.is-ready .btn-received.btn-received-strong { background: var(--ink); color: var(--signal); }
 
 /* ---------- التنبيه شغال: وميض أصفر/أسود ---------- */
 body.customer.alerting { animation: ticket-flash 1s steps(1, end) infinite; }
@@ -267,7 +262,6 @@ body.customer.alerting .link-btn { animation: ticket-flash-text 1s steps(1, end)
   0%  { color: var(--ink); }
   50% { color: var(--paper); }
 }
-body.customer.alerting #receivedBtn { box-shadow: 0 0 0 2px var(--paper); }
 
 /* =============================================================
    صفحة طباعة الـ QR
@@ -325,8 +319,6 @@ body.qr-page { background: var(--paper-2); }
 .ready-box p { color: #5b4e00; }
 .ready-ok { background: var(--ink); color: var(--signal); }
 .ready-ok:hover:not(:disabled) { background: #000; }
-.ready-received { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
-.ready-received:hover:not(:disabled) { background: rgba(0, 0, 0, .08); }
 /* الوميض حول البطاقة: أصفر وأسود */
 body.alerting .ready-modal { animation: ticket-modal-flash 1s steps(1, end) infinite; }
 @keyframes ticket-modal-flash {

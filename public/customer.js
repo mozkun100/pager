@@ -20,7 +20,6 @@ const orderPanel = $('orderPanel');
 const orderNumber = $('orderNumber');
 const orderStatusText = $('orderStatusText');
 const orderTimer = $('orderTimer');
-const receivedBtn = $('receivedBtn');
 const stopAlarmBtn = $('stopAlarmBtn');
 const reactivateBtn = $('reactivateBtn');
 const playBtn = $('playBtn');
@@ -226,7 +225,6 @@ function applyOrder(order, serverNow) {
   orderStatusText.textContent = t(isReady ? 'isReady' : 'notReady');
   orderPanel.classList.toggle('is-ready', isReady);
   document.body.classList.toggle('is-ready', isReady); // بعض التصاميم تلوّن الشاشة كاملة
-  receivedBtn.classList.toggle('btn-received-strong', isReady);
   showView('order');
   updateTimer();
   syncAlarm();
@@ -309,7 +307,6 @@ function hideReadyCard() {
   readyCard.hidden = true;
 }
 $('readyOkBtn').addEventListener('click', stopAlarm);               // "تمام، جاي" = يوقف التنبيه
-$('readyReceivedBtn').addEventListener('click', () => receivedBtn.click()); // نفس زر "تم الاستلام"
 
 // بعد تحديث الصفحة: أي لمسة على الشاشة تفتح الصوت (المتصفح يحتاج لمسة من العميل)
 document.addEventListener('pointerdown', () => {
@@ -318,18 +315,8 @@ document.addEventListener('pointerdown', () => {
   reactivateBtn.classList.add('hidden');
 }, true);
 
-// =============================================================
-//  4) تم الاستلام
-// =============================================================
-receivedBtn.addEventListener('click', () => {
-  if (!currentOrder) return;
-  if (!confirm(t('confirmReceived'))) return;
-  receivedBtn.disabled = true;
-  socket.emit('order:close', { id: currentOrder.id }, () => {
-    receivedBtn.disabled = false;
-    // السيرفر بيرسل order:update بحالة "done" وتنعرض رسالة الشكر
-  });
-});
+// "تم الاستلام" صار عند الكاشير بس (حماية: ما أحد يقدر يقفل طلب غيره بتخمين رقمه).
+// لما يقفل الكاشير الطلب، السيرفر يرسل order:update بحالة "done" وتنعرض رسالة الشكر.
 
 // لما تتغيّر اللغة نعيد كتابة النصوص المتغيّرة (الحالة، العداد، رسالة الشكر)
 document.addEventListener('langchange', () => {
